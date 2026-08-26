@@ -1,0 +1,16 @@
+# Ambientes virtuais e segredos locais
+.venv/
+.env
+.env.*
+
+# Arquivos gerados pelo Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+
+# Ferramentas e sistema operacional
+.pytest_cache/
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
