@@ -14,3 +14,30 @@ __pycache__/
 .idea/
 .DS_Store
 Thumbs.db
+
+# Kenney Nature Kit: versionar apenas os modelos usados pelo jogo
+kenney_nature-kit/*
+!kenney_nature-kit/License.txt
+!kenney_nature-kit/Models/
+kenney_nature-kit/Models/*
+!kenney_nature-kit/Models/STL format/
+kenney_nature-kit/Models/STL format/*
+!kenney_nature-kit/Models/STL format/fence_simple.stl
+!kenney_nature-kit/Models/STL format/flower_purpleA.stl
+!kenney_nature-kit/Models/STL format/flower_redA.stl
+!kenney_nature-kit/Models/STL format/flower_yellowA.stl
+!kenney_nature-kit/Models/STL format/grass_leafs.stl
+!kenney_nature-kit/Models/STL format/lily_large.stl
+!kenney_nature-kit/Models/STL format/log_large.stl
+!kenney_nature-kit/Models/STL format/mushroom_redGroup.stl
+!kenney_nature-kit/Models/STL format/plant_bush.stl
+!kenney_nature-kit/Models/STL format/plant_bushSmall.stl
+!kenney_nature-kit/Models/STL format/rock_largeC.stl
+!kenney_nature-kit/Models/STL format/rock_smallA.stl
+!kenney_nature-kit/Models/STL format/rock_tallC.stl
+!kenney_nature-kit/Models/STL format/sign.stl
+!kenney_nature-kit/Models/STL format/stump_round.stl
+!kenney_nature-kit/Models/STL format/tree_fat.stl
+!kenney_nature-kit/Models/STL format/tree_pineSmallC.stl
+!kenney_nature-kit/Models/STL format/tree_simple.stl
+!kenney_nature-kit/Models/STL format/tree_tall.stl
