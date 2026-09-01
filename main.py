@@ -7,6 +7,7 @@ primitivas, coordenadas, escala, cores e iluminação.
 
 from math import radians
 from pathlib import Path
+from textwrap import wrap
 from time import perf_counter
 
 try:
@@ -57,6 +58,8 @@ PROPORCAO_CENA_PAISAGEM = 1.6
 PROPORCAO_CENA_RETRATO = 0.6
 FOV_PAISAGEM_GRAUS = 58
 FOV_RETRATO_GRAUS = 74
+LARGURA_HUD_COMPACTO = 620
+LARGURA_HUD_UMA_LINHA = 820
 LIMITE_X = (LARGURA_PARQUE / 2) - 1.0
 LIMITE_Z = (PROFUNDIDADE_PARQUE / 2) - 1.0
 DISTANCIA_LIXO = 1.35
@@ -123,6 +126,32 @@ def obter_dimensoes_iniciais_cena():
                 raiz.destroy()
             except Exception:
                 pass
+
+
+def formatar_estado_interface(pontuacao, restantes, carregando, largura):
+    """Distribui os dados do HUD conforme a largura atual da cena."""
+    campos = (
+        f"Pontuação: <b>{pontuacao}</b>",
+        f"Resíduos restantes: <b>{restantes}</b>",
+        f"Carregando: <b>{carregando}</b>",
+    )
+    if largura >= LARGURA_HUD_UMA_LINHA:
+        return " | ".join(campos)
+    if largura >= LARGURA_HUD_COMPACTO:
+        return f"{campos[0]} | {campos[1]}<br>{campos[2]}"
+    return "<br>".join(campos)
+
+
+def formatar_mensagem_interface(mensagem, largura):
+    """Insere quebras explícitas porque a legenda do VPython não quebra texto."""
+    caracteres_por_linha = max(30, min(90, int(max(largura, 1) / 8)))
+    linhas = wrap(
+        mensagem,
+        width=caracteres_por_linha,
+        break_long_words=False,
+        break_on_hyphens=False,
+    )
+    return "<br>".join(linhas)
 
 
 class Jogador:
@@ -302,16 +331,15 @@ class JogoReciclagem:
         self.encerrado = False
         self.rotulo_vitoria = None
 
-        self.cena.append_to_caption("<br><b>Estado:</b> ")
+        self.cena.append_to_caption("<br><b>Estado:</b><br>")
         self.texto_estado = wtext(text="")
-        self.cena.append_to_caption("<br><b>Mensagem:</b> ")
+        self.cena.append_to_caption("<br><b>Mensagem:</b><br>")
         self.texto_mensagem = wtext(text="")
         self.cena.append_to_caption("<br>")
 
         self.cena.bind("resize", self.ao_redimensionar_cena)
         self.ajustar_layout_cena()
         self.atualizar_camera()
-        self.atualizar_interface()
 
     def atualizar(self, teclas, delta_t):
         self.atualizar_jogador(teclas, delta_t)
@@ -364,11 +392,26 @@ class JogoReciclagem:
         self.atualizar_camera()
 
     def ajustar_layout_cena(self):
-        """Adapta o campo de visão às dimensões atuais da área de renderização."""
+        """Adapta câmera e interface às dimensões da área de renderização."""
         self.cena.fov = calcular_fov_responsivo(
             self.cena.width,
             self.cena.height,
         )
+        self.atualizar_interface()
+        self.atualizar_rotulo_vitoria()
+
+    def atualizar_rotulo_vitoria(self):
+        if self.rotulo_vitoria is None:
+            return
+
+        compacto = self.cena.width < LARGURA_HUD_COMPACTO
+        self.rotulo_vitoria.pos = vector(
+            self.cena.width / 2,
+            self.cena.height / 2,
+            0,
+        )
+        self.rotulo_vitoria.height = 16 if compacto else 22
+        self.rotulo_vitoria.border = 10 if compacto else 16
 
     def verificar_lixo_proximo(self):
         candidatos = [
@@ -449,12 +492,16 @@ class JogoReciclagem:
             if self.lixo_carregado is not None
             else "nenhum"
         )
-        self.texto_estado.text = (
-            f"Pontuação: <b>{self.pontuacao}</b> | "
-            f"Resíduos restantes: <b>{self.residuos_restantes()}</b> | "
-            f"Carregando: <b>{carregando}</b>"
+        self.texto_estado.text = formatar_estado_interface(
+            self.pontuacao,
+            self.residuos_restantes(),
+            carregando,
+            self.cena.width,
         )
-        self.texto_mensagem.text = self.mensagem
+        self.texto_mensagem.text = formatar_mensagem_interface(
+            self.mensagem,
+            self.cena.width,
+        )
 
     def verificar_vitoria(self):
         if self.residuos_restantes() != 0:
@@ -466,11 +513,13 @@ class JogoReciclagem:
             f"Pontuação final: {self.pontuacao}."
         )
         self.rotulo_vitoria = label(
-            pos=self.jogador.pos + vector(0, 3.5, 0),
+            pos=vector(self.cena.width / 2, self.cena.height / 2, 0),
+            pixel_pos=True,
             text=(
                 "PARQUE LIMPO!\n\n"
                 "Parabéns!\n"
-                "Todos os resíduos foram descartados corretamente.\n\n"
+                "Todos os resíduos foram\n"
+                "descartados corretamente.\n\n"
                 f"Pontuação final: {self.pontuacao}"
             ),
             height=22,
@@ -481,6 +530,7 @@ class JogoReciclagem:
             box=True,
             line=False,
         )
+        self.atualizar_rotulo_vitoria()
 
 
 def configurar_cena():
@@ -489,9 +539,10 @@ def configurar_cena():
     cena = canvas(
         title="<b>Parque da Reciclagem 3D</b>",
         caption=(
-            "<b>WASD</b> — movimentar &nbsp;&nbsp; "
+            "<b>WASD</b> — movimentar<br>"
             "<b>E</b> — coletar / descartar<br>"
-            "Clique dentro da cena para o teclado responder."
+            "Clique na cena para usar o teclado.<br>"
+            "Arraste o canto inferior direito para redimensionar."
         ),
         width=largura_cena,
         height=altura_cena,
