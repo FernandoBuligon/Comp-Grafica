@@ -3,9 +3,10 @@
 ## Conclusão
 
 A arquitetura atual já separa as responsabilidades necessárias sem esconder a
-lógica principal do jogo. O código de produção foi preservado nesta etapa:
-extrair novas funções agora seria uma refatoração preventiva e aumentaria o
-volume de mudanças sem benefício imediato para a apresentação acadêmica.
+lógica principal do jogo. Sua organização foi preservada nesta etapa: extrair
+novas funções agora seria uma refatoração preventiva e aumentaria o volume de
+mudanças sem benefício imediato para a apresentação acadêmica. A única mudança
+no código executável foi a correção pontual descrita abaixo.
 
 `main.py` continua concentrando a cena, as entidades e as regras do jogo. O
 único módulo separado, `carregador_stl.py`, contém a leitura e a conversão das
@@ -67,10 +68,23 @@ etapas do plano.
 - A arquitetura deve continuar simples: novas funções auxiliares só devem ser
   extraídas quando reduzirem duplicação ou isolarem uma regra concreta.
 
+## Correção pontual realizada
+
+O protótipo de cada malha STL é mantido invisível no cache para que somente suas
+instâncias apareçam na cena. Como a
+[documentação oficial de `clone()`](https://www.glowscript.org/docs/VPythonDocs/clone.html)
+informa que a cópia recebe as propriedades do objeto de origem, as instâncias
+também herdavam `visible=False`. Depois da clonagem, `criar_instancia_stl` agora
+define explicitamente `modelo.visible = True`.
+
+A correção preserva o cache, o uso de `clone()` e as funções de fallback. Ela
+afeta somente a exibição das árvores e decorações que usam modelos STL.
+
 ## Verificação da etapa
 
-O código executável não foi alterado, portanto não houve mudança nos fluxos de
-movimentação, câmera, coleta, descarte e pontuação. A inspeção confirmou que:
+A única alteração executável foi a ativação da visibilidade dos clones STL;
+nenhum fluxo de movimentação, câmera, coleta, descarte ou pontuação foi
+modificado. A inspeção confirmou que:
 
 - o movimento continua normalizado e baseado em `delta_t`;
 - a câmera continua vinculada à posição do jogador;
@@ -96,5 +110,6 @@ deve confirmar:
 ## Resultado
 
 A análise e a organização conceitual da Etapa 1 estão concluídas. A arquitetura
-existente foi preservada, os pontos de extensão foram identificados e nenhuma
-funcionalidade das etapas seguintes foi antecipada.
+existente foi preservada, os pontos de extensão foram identificados, a
+visibilidade dos clones STL foi corrigida e nenhuma funcionalidade das etapas
+seguintes foi antecipada.
