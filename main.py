@@ -45,6 +45,18 @@ FPS = 60
 VELOCIDADE_JOGADOR = 4.5
 LARGURA_PARQUE = 34.0
 PROFUNDIDADE_PARQUE = 26.0
+LARGURA_CENA_PADRAO = 960
+ALTURA_CENA_PADRAO = 600
+LARGURA_CENA_MINIMA = 320
+ALTURA_CENA_MINIMA = 240
+LARGURA_CENA_MAXIMA = 1100
+ALTURA_CENA_MAXIMA = 750
+MARGEM_HORIZONTAL_TELA = 120
+MARGEM_VERTICAL_TELA = 240
+PROPORCAO_CENA_PAISAGEM = 1.6
+PROPORCAO_CENA_RETRATO = 0.6
+FOV_PAISAGEM_GRAUS = 58
+FOV_RETRATO_GRAUS = 74
 LIMITE_X = (LARGURA_PARQUE / 2) - 1.0
 LIMITE_Z = (PROFUNDIDADE_PARQUE / 2) - 1.0
 DISTANCIA_LIXO = 1.35
@@ -65,6 +77,52 @@ NOMES_TIPOS = {
     "plastico": "plástico",
     "vidro": "vidro",
 }
+
+
+def calcular_fov_responsivo(largura, altura):
+    """Amplia gradualmente o campo de visão conforme a cena fica estreita."""
+    if largura <= 0 or altura <= 0:
+        return radians(FOV_PAISAGEM_GRAUS)
+
+    proporcao = largura / altura
+    intervalo = PROPORCAO_CENA_PAISAGEM - PROPORCAO_CENA_RETRATO
+    fator_retrato = (PROPORCAO_CENA_PAISAGEM - proporcao) / intervalo
+    fator_retrato = max(0.0, min(1.0, fator_retrato))
+    fov_graus = FOV_PAISAGEM_GRAUS + fator_retrato * (
+        FOV_RETRATO_GRAUS - FOV_PAISAGEM_GRAUS
+    )
+    return radians(fov_graus)
+
+
+def calcular_dimensoes_cena(largura_tela, altura_tela):
+    """Reserva espaço ao navegador e limita dimensões extremas do canvas."""
+    largura = largura_tela - MARGEM_HORIZONTAL_TELA
+    altura = altura_tela - MARGEM_VERTICAL_TELA
+    largura = max(LARGURA_CENA_MINIMA, min(LARGURA_CENA_MAXIMA, largura))
+    altura = max(ALTURA_CENA_MINIMA, min(ALTURA_CENA_MAXIMA, altura))
+    return int(largura), int(altura)
+
+
+def obter_dimensoes_iniciais_cena():
+    """Obtém a resolução da tela sem tornar o Tkinter uma dependência obrigatória."""
+    raiz = None
+    try:
+        from tkinter import Tk
+
+        raiz = Tk()
+        raiz.withdraw()
+        return calcular_dimensoes_cena(
+            raiz.winfo_screenwidth(),
+            raiz.winfo_screenheight(),
+        )
+    except Exception:
+        return LARGURA_CENA_PADRAO, ALTURA_CENA_PADRAO
+    finally:
+        if raiz is not None:
+            try:
+                raiz.destroy()
+            except Exception:
+                pass
 
 
 class Jogador:
@@ -250,6 +308,8 @@ class JogoReciclagem:
         self.texto_mensagem = wtext(text="")
         self.cena.append_to_caption("<br>")
 
+        self.cena.bind("resize", self.ao_redimensionar_cena)
+        self.ajustar_layout_cena()
         self.atualizar_camera()
         self.atualizar_interface()
 
@@ -297,6 +357,18 @@ class JogoReciclagem:
         alvo = self.jogador.pos + vector(0, 1.0, -1.7)
         self.cena.camera.pos = self.jogador.pos + deslocamento_camera
         self.cena.camera.axis = alvo - self.cena.camera.pos
+
+    def ao_redimensionar_cena(self):
+        """Reaplica o enquadramento quando o usuário redimensiona o canvas."""
+        self.ajustar_layout_cena()
+        self.atualizar_camera()
+
+    def ajustar_layout_cena(self):
+        """Adapta o campo de visão às dimensões atuais da área de renderização."""
+        self.cena.fov = calcular_fov_responsivo(
+            self.cena.width,
+            self.cena.height,
+        )
 
     def verificar_lixo_proximo(self):
         candidatos = [
@@ -413,6 +485,7 @@ class JogoReciclagem:
 
 def configurar_cena():
     """Configura perspectiva, fundo, iluminação e controles da câmera."""
+    largura_cena, altura_cena = obter_dimensoes_iniciais_cena()
     cena = canvas(
         title="<b>Parque da Reciclagem 3D</b>",
         caption=(
@@ -420,8 +493,9 @@ def configurar_cena():
             "<b>E</b> — coletar / descartar<br>"
             "Clique dentro da cena para o teclado responder."
         ),
-        width=1000,
-        height=650,
+        width=largura_cena,
+        height=altura_cena,
+        resizable=True,
         background=vector(0.50, 0.76, 0.92),
     )
     cena.autoscale = False
@@ -429,7 +503,7 @@ def configurar_cena():
     cena.userpan = False
     cena.userzoom = False
     cena.up = vector(0, 1, 0)
-    cena.fov = radians(58)
+    cena.fov = calcular_fov_responsivo(cena.width, cena.height)
 
     # No VPython, direction aponta para a posição relativa da fonte. Por isso
     # ambas as luzes usam Y positivo: a iluminação vem de cima do parque.
