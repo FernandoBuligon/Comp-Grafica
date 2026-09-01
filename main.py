@@ -514,6 +514,7 @@ def criar_instancia_stl(
         PROTOTIPOS_STL[chave] = prototipo
 
     modelo = PROTOTIPOS_STL[chave].clone(pos=posicao)
+    modelo.visible = True
     if rotacao_graus:
         modelo.rotate(
             angle=radians(rotacao_graus),
