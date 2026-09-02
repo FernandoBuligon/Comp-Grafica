@@ -10,6 +10,8 @@ O desenvolvimento deverá ser realizado de forma incremental. Ao final de cada e
 
 # Etapa 1 — Análise e organização do código atual
 
+**Status: ✅ Concluída com sucesso.**
+
 Antes de implementar novas funcionalidades, analisar a estrutura existente do projeto e identificar os principais pontos responsáveis por:
 
 - criação da cena;
@@ -40,6 +42,8 @@ Caso algum trecho de `main.py` tenha crescido a ponto de dificultar as novas fun
 ---
 
 # Etapa 2 — Adaptação da aplicação ao tamanho da tela
+
+**Status: ✅ Concluída com sucesso.**
 
 Fazer com que a área de exibição do jogo se adapte automaticamente ao tamanho disponível na tela ou janela do navegador do usuário.
 
