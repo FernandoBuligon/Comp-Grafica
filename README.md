@@ -66,7 +66,7 @@ py -3.12 -m venv .venv
 ```bash
 python3.12 -m venv .venv
 ./.venv/bin/python -m pip install --upgrade pip
-./.venv/bin/python -m pip install "setuptools<81" vpython
+./.venv/bin/python -m pip install "setuptools<81" 
 ./.venv/bin/python main.py
 ```
 
@@ -77,11 +77,11 @@ Se o ambiente virtual já existe e aparece o erro
 `No module named 'pkg_resources'`, não é preciso recriá-lo. No Windows, execute:
 
 ```powershell
-.\.venv\Scripts\python.exe -m pip install "setuptools<81"
+.\.venv\Scripts\python.exe -m pip install "setuptools<81" vpython
 .\.venv\Scripts\python.exe main.py
 ```
 
-Ao executar pelo terminal, o VPython abre a cena 3D no navegador. Clique dentro da cena antes de usar o teclado. Para encerrar o processo, volte ao terminal e pressione `Ctrl+C`.
+Ao executar pelo terminal, o VPython abre a cena 3D no navegador. O estado e as mensagens aparecem sobre a própria cena. Pressione `M` ou `Esc` para abrir o menu lateral; com ele aberto, use `1`, `2` e `3` para acessar as instruções, regras e informações do projeto. Clique dentro da cena antes de usar o teclado. Para encerrar o processo, volte ao terminal e pressione `Ctrl+C`.
 
 Execute `main.py` diretamente pelo terminal, e não dentro de um notebook Jupyter: o notebook pode capturar as teclas antes que elas cheguem à cena do VPython.
 
@@ -96,6 +96,8 @@ Use o conjunto de teclas **WASD** para caminhar:
 | `A` | andar para a esquerda |
 | `D` | andar para a direita |
 | `E` | coletar o lixo próximo ou tentar descartá-lo |
+| `M` ou `Esc` | abrir ou fechar o menu sobreposto |
+| `1`, `2`, `3` | selecionar uma opção quando o menu estiver aberto |
 
 - Só é possível carregar um resíduo por vez.
 - Um descarte correto vale **+100 pontos** e remove o objeto da cena.
@@ -145,7 +147,7 @@ Use o conjunto de teclas **WASD** para caminhar:
 
 ## Limites intencionais do MVP
 
-O personagem não colide com árvores, bancos, lago ou objetos decorativos; apenas os limites externos do parque restringem sua posição. Também não há inventário, áudio, menu, fases, física avançada ou salvamento. Esses itens ficaram fora para preservar o fluxo acadêmico pedido.
+O personagem não colide com árvores, bancos, lago ou objetos decorativos; apenas os limites externos do parque restringem sua posição. Também não há inventário, áudio, fases, física avançada ou salvamento. Esses itens ficaram fora para preservar o fluxo acadêmico pedido.
 
 ## Melhorias futuras (não implementadas)
 

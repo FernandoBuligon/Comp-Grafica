@@ -25,7 +25,6 @@ try:
         rate,
         sphere,
         vector,
-        wtext,
     )
 except ModuleNotFoundError as erro:
     if erro.name == "vpython":
@@ -50,10 +49,10 @@ LARGURA_CENA_PADRAO = 960
 ALTURA_CENA_PADRAO = 600
 LARGURA_CENA_MINIMA = 320
 ALTURA_CENA_MINIMA = 240
-LARGURA_CENA_MAXIMA = 1100
-ALTURA_CENA_MAXIMA = 750
-MARGEM_HORIZONTAL_TELA = 120
-MARGEM_VERTICAL_TELA = 240
+LARGURA_CENA_MAXIMA = 1920
+ALTURA_CENA_MAXIMA = 1080
+MARGEM_HORIZONTAL_TELA = 24
+MARGEM_VERTICAL_TELA = 128
 PROPORCAO_CENA_PAISAGEM = 1.6
 PROPORCAO_CENA_RETRATO = 0.6
 FOV_PAISAGEM_GRAUS = 58
@@ -131,27 +130,45 @@ def obter_dimensoes_iniciais_cena():
 def formatar_estado_interface(pontuacao, restantes, carregando, largura):
     """Distribui os dados do HUD conforme a largura atual da cena."""
     campos = (
-        f"Pontuação: <b>{pontuacao}</b>",
-        f"Resíduos restantes: <b>{restantes}</b>",
-        f"Carregando: <b>{carregando}</b>",
+        f"Pontuação: {pontuacao}",
+        f"Resíduos restantes: {restantes}",
+        f"Carregando: {carregando}",
     )
     if largura >= LARGURA_HUD_UMA_LINHA:
         return " | ".join(campos)
     if largura >= LARGURA_HUD_COMPACTO:
-        return f"{campos[0]} | {campos[1]}<br>{campos[2]}"
-    return "<br>".join(campos)
+        return f"{campos[0]} | {campos[1]}\n{campos[2]}"
+    return "\n".join(campos)
 
 
 def formatar_mensagem_interface(mensagem, largura):
-    """Insere quebras explícitas porque a legenda do VPython não quebra texto."""
-    caracteres_por_linha = max(30, min(90, int(max(largura, 1) / 8)))
+    """Insere quebras explícitas para o texto sobreposto à cena."""
+    caracteres_por_linha = max(26, min(82, int(max(largura, 1) / 9)))
     linhas = wrap(
         mensagem,
         width=caracteres_por_linha,
         break_long_words=False,
         break_on_hyphens=False,
     )
-    return "<br>".join(linhas)
+    return "\n".join(linhas)
+
+
+def formatar_hud_interface(
+    pontuacao,
+    restantes,
+    carregando,
+    mensagem,
+    largura,
+):
+    """Monta o estado e a mensagem exibidos sobre a cena 3D."""
+    estado = formatar_estado_interface(
+        pontuacao,
+        restantes,
+        carregando,
+        largura,
+    )
+    mensagem_formatada = formatar_mensagem_interface(mensagem, largura)
+    return f"{estado}\n{mensagem_formatada}"
 
 
 class Jogador:
@@ -328,20 +345,113 @@ class JogoReciclagem:
         self.pontuacao = 0
         self.mensagem = "Encontre um resíduo e pressione E para coletá-lo."
         self.e_estava_pressionado = False
+        self.atalho_menu_estava_pressionado = False
+        self.teclas_menu_anteriores = set()
+        self.menu_aberto = False
+        self.secao_menu = None
         self.encerrado = False
         self.rotulo_vitoria = None
+        self.ultimo_texto_hud = None
 
-        self.cena.append_to_caption("<br><b>Estado:</b><br>")
-        self.texto_estado = wtext(text="")
-        self.cena.append_to_caption("<br><b>Mensagem:</b><br>")
-        self.texto_mensagem = wtext(text="")
-        self.cena.append_to_caption("<br>")
+        self.rotulo_hud = label(
+            pos=vector(16, cena.height - 45, 0),
+            pixel_pos=True,
+            text="",
+            align="left",
+            height=14,
+            color=color.white,
+            background=vector(0.03, 0.08, 0.12),
+            opacity=0.78,
+            border=7,
+            box=True,
+            line=False,
+        )
+        self.rotulo_menu = label(
+            pos=vector(cena.width - 16, cena.height / 2, 0),
+            pixel_pos=True,
+            text="",
+            align="right",
+            height=15,
+            color=color.white,
+            background=vector(0.03, 0.06, 0.10),
+            opacity=0.9,
+            border=12,
+            box=True,
+            line=False,
+            visible=False,
+        )
 
         self.cena.bind("resize", self.ao_redimensionar_cena)
         self.ajustar_layout_cena()
         self.atualizar_camera()
 
+    def alternar_menu(self):
+        """Abre ou fecha o painel sobreposto e pausa a ação do jogo."""
+        self.menu_aberto = not self.menu_aberto
+        self.secao_menu = None
+        self.rotulo_menu.visible = self.menu_aberto
+        self.atualizar_texto_menu()
+
+    def atualizar_texto_menu(self):
+        """Atualiza a opção selecionada no painel lateral."""
+        conteudos = {
+            "1": (
+                "COMO JOGAR\n"
+                "W A S D  Caminhar\n"
+                "E  Coletar ou descartar\n\n"
+                "Clique na cena antes de\nusar o teclado."
+            ),
+            "2": (
+                "REGRAS\n"
+                "Carregue um resíduo por vez.\n"
+                "Leve-o à lixeira correta.\n\n"
+                f"Acerto: +{PONTOS_ACERTO} pontos\n"
+                f"Erro: -{PONTOS_ERRO} pontos"
+            ),
+            "3": (
+                "SOBRE O JOGO\n"
+                "Jogo educativo sobre\n"
+                "coleta seletiva feito com\n"
+                "Python e VPython."
+            ),
+        }
+        texto = (
+            "MENU\n\n"
+            "[1] Como jogar\n"
+            "[2] Regras\n"
+            "[3] Sobre o jogo\n\n"
+            "[M ou Esc] Fechar"
+        )
+        if self.secao_menu in conteudos:
+            texto += f"\n\n──────────────\n\n{conteudos[self.secao_menu]}"
+        self.rotulo_menu.text = texto
+
+    def atualizar_entrada_menu(self, teclas):
+        """Trata atalhos do menu usando uma ação por toque."""
+        atalho_pressionado = bool({"m", "esc", "escape"} & teclas)
+        if atalho_pressionado and not self.atalho_menu_estava_pressionado:
+            self.alternar_menu()
+            self.teclas_menu_anteriores = set(teclas)
+        self.atalho_menu_estava_pressionado = atalho_pressionado
+
+        if not self.menu_aberto:
+            self.teclas_menu_anteriores = set()
+            return
+
+        for tecla in ("1", "2", "3"):
+            if tecla in teclas and tecla not in self.teclas_menu_anteriores:
+                self.secao_menu = tecla
+                self.atualizar_texto_menu()
+                break
+        self.teclas_menu_anteriores = set(teclas)
+
     def atualizar(self, teclas, delta_t):
+        self.atualizar_entrada_menu(teclas)
+        if self.menu_aberto:
+            self.e_estava_pressionado = "e" in teclas
+            self.atualizar_interface()
+            return
+
         self.atualizar_jogador(teclas, delta_t)
         self.atualizar_lixo_carregado()
         self.atualizar_camera()
@@ -386,7 +496,7 @@ class JogoReciclagem:
         self.cena.camera.pos = self.jogador.pos + deslocamento_camera
         self.cena.camera.axis = alvo - self.cena.camera.pos
 
-    def ao_redimensionar_cena(self):
+    def ao_redimensionar_cena(self, _evento=None):
         """Reaplica o enquadramento quando o usuário redimensiona o canvas."""
         self.ajustar_layout_cena()
         self.atualizar_camera()
@@ -398,7 +508,28 @@ class JogoReciclagem:
             self.cena.height,
         )
         self.atualizar_interface()
+        self.atualizar_posicoes_interface()
         self.atualizar_rotulo_vitoria()
+
+    def atualizar_posicoes_interface(self):
+        """Mantém HUD e menu ancorados ao canvas durante o redimensionamento."""
+        compacto = self.cena.width < LARGURA_HUD_COMPACTO
+        altura_hud = 12 if compacto else 14
+        self.rotulo_hud.height = altura_hud
+        quantidade_linhas = max(1, self.rotulo_hud.text.count("\n") + 1)
+        meia_altura_hud = (quantidade_linhas * altura_hud * 1.2) / 2
+        self.rotulo_hud.pos = vector(
+            14,
+            self.cena.height - meia_altura_hud - 14,
+            0,
+        )
+
+        self.rotulo_menu.height = 13 if compacto else 15
+        self.rotulo_menu.pos = vector(
+            self.cena.width - 16,
+            self.cena.height * 0.62,
+            0,
+        )
 
     def atualizar_rotulo_vitoria(self):
         if self.rotulo_vitoria is None:
@@ -492,22 +623,25 @@ class JogoReciclagem:
             if self.lixo_carregado is not None
             else "nenhum"
         )
-        self.texto_estado.text = formatar_estado_interface(
+        texto_hud = formatar_hud_interface(
             self.pontuacao,
             self.residuos_restantes(),
             carregando,
-            self.cena.width,
-        )
-        self.texto_mensagem.text = formatar_mensagem_interface(
             self.mensagem,
             self.cena.width,
         )
+        if texto_hud != self.ultimo_texto_hud:
+            self.rotulo_hud.text = texto_hud
+            self.ultimo_texto_hud = texto_hud
+            self.atualizar_posicoes_interface()
 
     def verificar_vitoria(self):
         if self.residuos_restantes() != 0:
             return
 
         self.encerrado = True
+        self.menu_aberto = False
+        self.rotulo_menu.visible = False
         self.mensagem = (
             "PARQUE LIMPO! Parabéns! "
             f"Pontuação final: {self.pontuacao}."
@@ -537,13 +671,8 @@ def configurar_cena():
     """Configura perspectiva, fundo, iluminação e controles da câmera."""
     largura_cena, altura_cena = obter_dimensoes_iniciais_cena()
     cena = canvas(
-        title="<b>Parque da Reciclagem 3D</b>",
-        caption=(
-            "<b>WASD</b> — movimentar<br>"
-            "<b>E</b> — coletar / descartar<br>"
-            "Clique na cena para usar o teclado.<br>"
-            "Arraste o canto inferior direito para redimensionar."
-        ),
+        title="",
+        caption="",
         width=largura_cena,
         height=altura_cena,
         resizable=True,
