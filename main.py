@@ -72,12 +72,6 @@ LARGURA_PARQUE = 34.0
 PROFUNDIDADE_PARQUE = 26.0
 LARGURA_CENA_PADRAO = 960
 ALTURA_CENA_PADRAO = 600
-LARGURA_CENA_MINIMA = 320
-ALTURA_CENA_MINIMA = 240
-LARGURA_CENA_MAXIMA = 1920
-ALTURA_CENA_MAXIMA = 1080
-MARGEM_HORIZONTAL_TELA = 24
-MARGEM_VERTICAL_TELA = 128
 PROPORCAO_CENA_PAISAGEM = 1.6
 PROPORCAO_CENA_RETRATO = 0.6
 FOV_PAISAGEM_GRAUS = 58
@@ -143,35 +137,14 @@ def calcular_fov_responsivo(largura, altura):
     return radians(fov_graus)
 
 
-def calcular_dimensoes_cena(largura_tela, altura_tela):
-    """Reserva espaço ao navegador e limita dimensões extremas do canvas."""
-    largura = largura_tela - MARGEM_HORIZONTAL_TELA
-    altura = altura_tela - MARGEM_VERTICAL_TELA
-    largura = max(LARGURA_CENA_MINIMA, min(LARGURA_CENA_MAXIMA, largura))
-    altura = max(ALTURA_CENA_MINIMA, min(ALTURA_CENA_MAXIMA, altura))
-    return int(largura), int(altura)
+def acompanhar_janela(cena):
+    """Instala o ajuste no navegador após registrar o callback de resize.
 
-
-def obter_dimensoes_iniciais_cena():
-    """Obtém a resolução da tela sem tornar o Tkinter uma dependência obrigatória."""
-    raiz = None
-    try:
-        from tkinter import Tk
-
-        raiz = Tk()
-        raiz.withdraw()
-        return calcular_dimensoes_cena(
-            raiz.winfo_screenwidth(),
-            raiz.winfo_screenheight(),
-        )
-    except Exception:
-        return LARGURA_CENA_PADRAO, ALTURA_CENA_PADRAO
-    finally:
-        if raiz is not None:
-            try:
-                raiz.destroy()
-            except Exception:
-                pass
+    O HTML da legenda é processado pelo VPython 7.6.5. O script atualiza
+    o canvas WebGL e envia o evento resize para sincronizar câmera e HUD.
+    """
+    script = Path(__file__).with_name("janela.js").read_text(encoding="utf-8")
+    cena.append_to_caption(f"<script>{script}</script>")
 
 
 def formatar_estado_interface(pontuacao, restantes, carregando, largura):
@@ -977,12 +950,11 @@ class JogoReciclagem:
 
 def configurar_cena():
     """Configura perspectiva, fundo, iluminação e controles da câmera."""
-    largura_cena, altura_cena = obter_dimensoes_iniciais_cena()
     cena = canvas(
         title="",
         caption="",
-        width=largura_cena,
-        height=altura_cena,
+        width=LARGURA_CENA_PADRAO,
+        height=ALTURA_CENA_PADRAO,
         resizable=True,
         background=vector(*parametros_iluminacao(0)["fundo"]),
     )
@@ -1760,6 +1732,7 @@ def executar():
     lixos = criar_lixos()
     iluminacao = Iluminacao(cena)
     jogo = JogoReciclagem(cena, jogador, lixos, lixeiras, iluminacao)
+    acompanhar_janela(cena)
 
     instante_anterior = perf_counter()
 

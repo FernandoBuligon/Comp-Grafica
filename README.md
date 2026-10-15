@@ -80,6 +80,12 @@ python3.12 -m venv .venv
 ./.venv/bin/python main.py
 ```
 
+A cena preenche a área interna do navegador e acompanha o redimensionamento da
+janela e as mudanças de zoom. O arquivo `janela.js`, distribuído junto de
+`main.py`, sincroniza as dimensões do canvas, a câmera e o HUD. Não é necessário
+instalar Tkinter. Para ocultar também as barras do navegador, use o modo de tela
+cheia do próprio navegador (normalmente `F11`).
+
 O limite `setuptools<81` é necessário porque o VPython 7.6.5 ainda importa
 `pkg_resources`, que foi retirado das versões mais recentes do setuptools.
 
