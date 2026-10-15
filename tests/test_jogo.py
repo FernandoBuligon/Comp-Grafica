@@ -77,13 +77,12 @@ class RegrasJogo(unittest.TestCase):
         self.assertLess((lixo.pos - mao).mag, 1e-6)
         self.assertGreater(lixo.pos.y, .8)
 
-    def test_n_alterna_dia_e_noite_uma_vez_por_toque(self):
+    def test_n_nao_altera_iluminacao(self):
         chamadas = []
-        self.jogo.iluminacao = SimpleNamespace(alternar=lambda: chamadas.append(1),
-                                               atualizar=lambda dt: None)
+        self.jogo.iluminacao = SimpleNamespace(atualizar=lambda dt: chamadas.append(dt))
         for teclas in ({'n'}, {'n'}, set(), {'n'}):
             self.jogo.atualizar(teclas, .016)
-        self.assertEqual(len(chamadas), 2)
+        self.assertEqual(chamadas, [.016] * 4)
 
     def test_sombra_acompanha_o_jogador(self):
         antes = self.jogador.sombra.elipse.pos
@@ -125,7 +124,7 @@ class RegrasJogo(unittest.TestCase):
     def test_cenario_mantem_todos_os_objetivos_acessiveis(self):
         with ExitStack() as pilha:
             for nome in ('box', 'cylinder', 'sphere', 'ellipsoid', 'compound',
-                         'local_light', 'criar_instancia_stl',
+                         'criar_instancia_stl',
                          'criar_modelo_residuo'):
                 pilha.enter_context(patch.object(main, nome, return_value=SimpleNamespace()))
             main.criar_parque()

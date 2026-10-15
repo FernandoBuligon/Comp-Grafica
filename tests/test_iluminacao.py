@@ -12,16 +12,12 @@ from iluminacao import (
 
 
 class Iluminacao(unittest.TestCase):
-    def test_extremos_e_limites_do_ciclo(self):
-        dia, noite = parametros_iluminacao(0), parametros_iluminacao(1)
-        for nome, (cor_dia, cor_noite) in PALETA.items():
-            self.assertEqual(dia[nome], cor_dia)
-            self.assertEqual(noite[nome], cor_noite)
-        self.assertEqual(parametros_iluminacao(-3), dia)
-        self.assertEqual(parametros_iluminacao(9), noite)
-        self.assertEqual(dia['poste'], (0.0, 0.0, 0.0))
-        self.assertGreater(noite['opacidade_halo'], dia['opacidade_halo'])
-        self.assertLess(noite['opacidade_sombra'], dia['opacidade_sombra'])
+    def test_paleta_diurna_e_sombras(self):
+        parametros = parametros_iluminacao()
+        self.assertEqual(parametros['fundo'], (0.50, 0.76, 0.92))
+        self.assertEqual(parametros['opacidade_sombra'], .38)
+        parametros['fundo'] = (0, 0, 0)
+        self.assertEqual(parametros_iluminacao()['fundo'], PALETA['fundo'])
 
     def test_sombra_aponta_para_longe_do_sol(self):
         (sx, sz), avanco = direcao_sombra()

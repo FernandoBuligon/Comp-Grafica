@@ -9,37 +9,21 @@ from math import hypot
 # Direção que aponta do parque para o Sol (convenção do distant_light).
 DIRECAO_SOL = (-0.55, 1.0, 0.35)
 
-# Cada entrada guarda (dia, noite); o fator de noite interpola entre os dois.
+# Paleta diurna fixa.
 PALETA = {
-    "fundo": ((0.50, 0.76, 0.92), (0.03, 0.05, 0.13)),
-    "ambiente": ((0.12, 0.13, 0.14), (0.04, 0.05, 0.08)),
-    "sol": ((0.70, 0.66, 0.58), (0.12, 0.14, 0.22)),
-    "preenchimento": ((0.11, 0.13, 0.16), (0.03, 0.04, 0.07)),
-    "ceu": ((0.08, 0.10, 0.13), (0.02, 0.03, 0.07)),
-    "reflexo_grama": ((0.05, 0.08, 0.04), (0.01, 0.01, 0.01)),
-    "poste": ((0.0, 0.0, 0.0), (0.075, 0.060, 0.032)),
-    "nuvem": ((1.0, 1.0, 1.0), (0.22, 0.24, 0.32)),
+    "fundo": (0.50, 0.76, 0.92),
+    "ambiente": (0.12, 0.13, 0.14),
+    "sol": (0.70, 0.66, 0.58),
+    "preenchimento": (0.11, 0.13, 0.16),
+    "ceu": (0.08, 0.10, 0.13),
+    "reflexo_grama": (0.05, 0.08, 0.04),
+    "nuvem": (1.0, 1.0, 1.0),
 }
-OPACIDADE_SOMBRA = (0.38, 0.14)
-OPACIDADE_HALO_POSTE = (0.0, 0.30)
 
 
-def misturar(inicio, fim, fator):
-    """Interpolação linear componente a componente."""
-    return tuple(a * (1 - fator) + b * fator for a, b in zip(inicio, fim))
-
-
-def parametros_iluminacao(fator_noite):
-    """Cores e opacidades da cena para um fator entre 0 (dia) e 1 (noite)."""
-    fator = max(0.0, min(1.0, fator_noite))
-    parametros = {
-        nome: misturar(dia, noite, fator) for nome, (dia, noite) in PALETA.items()
-    }
-    parametros["opacidade_sombra"] = misturar(
-        (OPACIDADE_SOMBRA[0],), (OPACIDADE_SOMBRA[1],), fator)[0]
-    parametros["opacidade_halo"] = misturar(
-        (OPACIDADE_HALO_POSTE[0],), (OPACIDADE_HALO_POSTE[1],), fator)[0]
-    return parametros
+def parametros_iluminacao():
+    """Cores e opacidade das sombras durante o dia."""
+    return {**PALETA, "opacidade_sombra": 0.38}
 
 
 def direcao_sombra(direcao_luz=DIRECAO_SOL):

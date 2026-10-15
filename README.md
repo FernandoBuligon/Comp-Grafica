@@ -28,7 +28,7 @@ O jogo permanece concentrado em `main.py` para facilitar a apresentação. A lei
 - `carregador_stl.py`: lê STL binário ou ASCII e cria uma malha de triângulos;
 - `modelos_residuos.py`: constrói os seis resíduos com perfis de revolução e primitivas;
 - `colisoes.py`: verifica obstáculos no plano XZ e permite deslizar pelas bordas;
-- `iluminacao.py`: paleta do ciclo dia/noite e cálculo das sombras projetadas (o VPython não gera sombras, então cada objeto recebe uma elipse escura deslocada no sentido oposto ao Sol);
+- `iluminacao.py`: paleta diurna e cálculo das sombras projetadas (o VPython não gera sombras, então cada objeto recebe uma elipse escura deslocada no sentido oposto ao Sol);
 - `animacao.py`: calcula, sem depender do VPython, a pose articulada do personagem (caminhada, respiração, coleta e arremesso);
 - `executar`: contém o loop principal de animação.
 
@@ -134,7 +134,6 @@ O controle é em terceira pessoa: a câmera fica atrás do jogador e gira, com u
 | `D` | girar para a direita |
 | `E` | coletar o lixo próximo ou tentar descartá-lo |
 | `R` | reiniciar a partida, inclusive após a vitória |
-| `N` | alternar entre dia e noite (postes acendem à noite) |
 | `M` ou `Esc` | abrir ou fechar o menu sobreposto |
 | `1`, `2`, `3` | selecionar uma opção quando o menu estiver aberto |
 

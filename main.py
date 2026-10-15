@@ -21,7 +21,6 @@ try:
         ellipsoid,
         keysdown,
         label,
-        local_light,
         mag,
         rate,
         sphere,
@@ -109,9 +108,7 @@ CAMINHO_ROCHA_STL = DIRETORIO_STL / "rock_smallA.stl"
 PROTOTIPOS_STL = {}
 OBSTACULOS = []
 SOMBRAS = []
-POSTES = []
 ALTURA_SOMBRA = 0.085          # acima dos caminhos e da praça
-TAXA_TRANSICAO_NOITE = 1.6
 VELOCIDADE_NUVENS = 0.6
 LIMITE_NUVENS_X = 70.0
 
@@ -195,13 +192,13 @@ class Sombra:
     """Sombra projetada aproximada por uma elipse escura e translúcida no chão.
 
     O tamanho e o deslocamento vêm de ``iluminacao.geometria_sombra``; a
-    intensidade global muda com o ciclo dia/noite.
+    intensidade global corresponde à iluminação diurna.
     """
 
     def __init__(self, posicao, raio, altura):
         self.raio = raio
         self.altura = altura
-        self.intensidade = parametros_iluminacao(0)["opacidade_sombra"]
+        self.intensidade = parametros_iluminacao()["opacidade_sombra"]
         self.fator_elevacao = 1.0
         self.elipse = ellipsoid(
             pos=vector(posicao.x, ALTURA_SOMBRA, posicao.z),
@@ -499,7 +496,6 @@ class JogoReciclagem:
     def __init__(self, cena, jogador, lixos, lixeiras, iluminacao=None):
         self.cena = cena
         self.iluminacao = iluminacao
-        self.n_estava_pressionado = False
         self.jogador = jogador
         self.lixos = lixos
         self.lixeiras = lixeiras
@@ -567,7 +563,6 @@ class JogoReciclagem:
                 "W / S  Andar para frente/trás\n"
                 "A / D  Girar\n"
                 "E  Coletar ou descartar\n"
-                "N  Alternar dia/noite\n"
                 "R  Reiniciar partida\n\n"
                 "Clique na cena antes de\nusar o teclado."
             ),
@@ -639,7 +634,8 @@ class JogoReciclagem:
         self.atualizar_interface()
 
     def atualizar(self, teclas, delta_t):
-        self.atualizar_iluminacao(teclas, delta_t)
+        if self.iluminacao is not None:
+            self.iluminacao.atualizar(delta_t)
         r_pressionado = "r" in teclas
         reiniciou = r_pressionado and not self.r_estava_pressionado
         self.r_estava_pressionado = r_pressionado
@@ -671,16 +667,6 @@ class JogoReciclagem:
         self.atualizar_animacoes(delta_t)
 
         self.atualizar_interface()
-
-    def atualizar_iluminacao(self, teclas, delta_t):
-        """A tecla N alterna dia e noite; nuvens e transições seguem sempre."""
-        if self.iluminacao is None:
-            return
-        n_pressionado = "n" in teclas
-        if n_pressionado and not self.n_estava_pressionado:
-            self.iluminacao.alternar()
-        self.n_estava_pressionado = n_pressionado
-        self.iluminacao.atualizar(delta_t)
 
     def atualizar_jogador(self, teclas, delta_t):
         """Controle em terceira pessoa: A/D giram, W/S andam na direção do olhar."""
@@ -956,7 +942,7 @@ def configurar_cena():
         width=LARGURA_CENA_PADRAO,
         height=ALTURA_CENA_PADRAO,
         resizable=True,
-        background=vector(*parametros_iluminacao(0)["fundo"]),
+        background=vector(*parametros_iluminacao()["fundo"]),
     )
     cena.autoscale = False
     cena.userspin = False
@@ -968,23 +954,10 @@ def configurar_cena():
 
 
 class Iluminacao:
-    """Luzes da cena e ciclo dia/noite com transição suave.
-
-    Modelo de iluminação usado (Phong, calculado pelo VPython):
-    - ambiente: luz uniforme mínima, para que nada fique totalmente preto;
-    - Sol: luz direcional quente, a mesma direção usada pelas sombras;
-    - preenchimento: luz fria e fraca do lado oposto, que suaviza contrastes;
-    - céu e reflexo da grama: aproximam a luz indireta vinda de cima e de baixo;
-    - postes: luzes pontuais (local_light) acesas apenas à noite.
-
-    O local_light do VPython não perde força com a distância; por isso cada
-    poste também ganha um halo emissivo no chão, que delimita a área iluminada.
-    """
+    """Iluminação diurna fixa com Sol, preenchimento e nuvens em movimento."""
 
     def __init__(self, cena):
         self.cena = cena
-        self.fator_noite = 0.0
-        self.alvo_noite = 0.0
         cena.lights = []
         self.sol = distant_light(direction=vector(*DIRECAO_SOL), color=color.black)
         self.preenchimento = distant_light(
@@ -995,26 +968,16 @@ class Iluminacao:
         self.nuvens = criar_nuvens()
         self.aplicar()
 
-    def alternar(self):
-        self.alvo_noite = 1.0 - self.alvo_noite
-
     def atualizar(self, delta_t):
         for nuvem in self.nuvens:
             x = nuvem.pos.x + VELOCIDADE_NUVENS * delta_t
             if x > LIMITE_NUVENS_X:
                 x -= 2 * LIMITE_NUVENS_X
             nuvem.pos = vector(x, nuvem.pos.y, nuvem.pos.z)
-        if abs(self.fator_noite - self.alvo_noite) < 1e-3:
-            return
-        self.fator_noite = aproximar(
-            self.fator_noite, self.alvo_noite, TAXA_TRANSICAO_NOITE, delta_t)
-        if abs(self.fator_noite - self.alvo_noite) < 1e-3:
-            self.fator_noite = self.alvo_noite
-        self.aplicar()
 
     def aplicar(self):
-        """Envia ao renderizador as cores correspondentes ao fator atual."""
-        p = parametros_iluminacao(self.fator_noite)
+        """Envia ao renderizador as cores da iluminação diurna."""
+        p = parametros_iluminacao()
         self.cena.background = vector(*p["fundo"])
         self.cena.ambient = vector(*p["ambiente"])
         self.sol.color = vector(*p["sol"])
@@ -1025,14 +988,6 @@ class Iluminacao:
             nuvem.color = vector(*p["nuvem"])
         for sombra in SOMBRAS:
             sombra.definir_intensidade(p["opacidade_sombra"])
-        acesos = self.fator_noite > 0.5
-        for poste in POSTES:
-            poste["luz"].color = vector(*p["poste"])
-            poste["halo"].opacity = p["opacidade_halo"]
-            poste["halo"].visible = p["opacidade_halo"] > 0.01
-            poste["lampada"].emissive = acesos
-            poste["lampada"].color = (
-                vector(1.0, 0.86, 0.55) if acesos else vector(0.86, 0.86, 0.80))
 
 
 def criar_nuvens():
@@ -1063,7 +1018,7 @@ def criar_nuvens():
 
 
 def criar_poste(posicao):
-    """Poste de luz: haste metálica, luminária, lâmpada e halo no chão."""
+    """Poste decorativo com haste metálica, luminária e lâmpada."""
     OBSTACULOS.append(Obstaculo(posicao.x, posicao.z, raio=.2))
     Sombra(posicao, raio=.2, altura=3.2)
     cor_metal = vector(0.16, 0.18, 0.20)
@@ -1075,14 +1030,8 @@ def criar_poste(posicao):
         color=cor_metal)
     cylinder(pos=posicao + vector(0, 3.46, 0),
                          axis=vector(0, 0.12, 0), radius=0.12, color=cor_metal)
-    lampada = sphere(pos=posicao + vector(0, 3.24, 0), radius=0.17,
+    sphere(pos=posicao + vector(0, 3.24, 0), radius=0.17,
                      color=vector(0.86, 0.86, 0.80), shininess=0.6)
-    halo = cylinder(pos=vector(posicao.x, ALTURA_SOMBRA + 0.005, posicao.z),
-                    axis=vector(0, 0.004, 0), radius=2.4,
-                    color=vector(1.0, 0.80, 0.45), emissive=True,
-                    opacity=0, visible=False)
-    luz = local_light(pos=posicao + vector(0, 3.24, 0), color=color.black)
-    POSTES.append({"lampada": lampada, "halo": halo, "luz": luz})
 
 
 def criar_chafariz(centro):
@@ -1569,7 +1518,6 @@ def criar_parque():
     """Cria o parque ampliado, seus caminhos e elementos naturais."""
     OBSTACULOS.clear()
     SOMBRAS.clear()
-    POSTES.clear()
     box(
         pos=vector(0, -0.12, 0),
         size=vector(LARGURA_PARQUE, 0.24, PROFUNDIDADE_PARQUE),
