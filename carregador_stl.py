@@ -1,13 +1,13 @@
 """Carregador mínimo de malhas STL para objetos ``triangle`` do VPython.
 
 O módulo aceita STL binário e ASCII sem depender de NumPy ou numpy-stl. Como o
-formato STL não armazena materiais, uma única cor é aplicada à malha importada.
+formato STL não armazena materiais, cores podem ser fornecidas por face.
 """
 
+from math import isfinite
 from pathlib import Path
 from struct import Struct, unpack_from
 
-from vpython import compound, mag, norm, triangle, vector, vertex
 
 
 REGISTRO_TRIANGULO = Struct("<12fH")
@@ -56,29 +56,42 @@ def _ler_stl_ascii(dados, limite_triangulos):
         raise ValueError("O arquivo não é um STL binário nem ASCII válido.") from erro
 
     faces = []
-    vertices_face = []
+    vertices_face = None
+    estado = "inicio"
     for linha in texto.splitlines():
         partes = linha.strip().split()
-        if not partes or partes[0].lower() != "vertex":
+        if not partes:
             continue
-        if len(partes) != 4:
-            raise ValueError("Foi encontrado um vértice STL ASCII inválido.")
-
-        try:
-            vertices_face.append(tuple(float(valor) for valor in partes[1:]))
-        except ValueError as erro:
-            raise ValueError("Foi encontrada uma coordenada STL inválida.") from erro
-
-        if len(vertices_face) == 3:
-            faces.append(tuple(vertices_face))
+        comando = partes[0].lower()
+        if comando == "solid" and estado == "inicio":
+            estado = "solido"
+        elif comando == "facet" and estado == "solido":
+            if len(partes) != 5 or partes[1].lower() != "normal":
+                raise ValueError("Normal STL ASCII inválida.")
+            estado = "face"
             vertices_face = []
+        elif comando == "outer" and partes[1:] == ["loop"] and estado == "face":
+            estado = "vertices"
+        elif comando == "vertex" and estado == "vertices":
+            if len(partes) != 4 or len(vertices_face) >= 3:
+                raise ValueError("Vértice STL ASCII inválido.")
+            try:
+                vertices_face.append(tuple(float(valor) for valor in partes[1:]))
+            except ValueError as erro:
+                raise ValueError("Coordenada STL inválida.") from erro
+        elif comando == "endloop" and estado == "vertices" and len(vertices_face) == 3:
+            estado = "fim_face"
+        elif comando == "endfacet" and estado == "fim_face":
+            faces.append(tuple(vertices_face))
             if len(faces) > limite_triangulos:
-                raise ValueError(
-                    f"A malha excede o limite de {limite_triangulos} triângulos."
-                )
-
-    if vertices_face or not faces:
-        raise ValueError("O STL ASCII não contém faces triangulares completas.")
+                raise ValueError(f"A malha excede o limite de {limite_triangulos} triângulos.")
+            estado = "solido"
+        elif comando == "endsolid" and estado == "solido":
+            estado = "inicio"  # Também aceita vários sólidos no mesmo arquivo.
+        else:
+            raise ValueError(f"Estrutura STL ASCII inválida: {comando}.")
+    if estado != "inicio" or not faces:
+        raise ValueError("O STL ASCII não contém sólidos triangulares completos.")
     return faces
 
 
@@ -93,6 +106,8 @@ def ler_triangulos_stl(caminho, limite_triangulos=LIMITE_PADRAO_TRIANGULOS):
         faces = _ler_stl_ascii(dados, limite_triangulos)
     if not faces:
         raise ValueError("O arquivo STL não contém triângulos.")
+    if any(not isfinite(valor) for face in faces for ponto in face for valor in ponto):
+        raise ValueError("O STL contém coordenadas não finitas.")
     return faces
 
 
@@ -116,7 +131,9 @@ def carregar_stl(
     face depois da conversão de eixos. Isso permite recuperar cores aproximadas
     em modelos cujo STL perdeu os materiais originais.
     """
-    if altura <= 0:
+    from vpython import compound, mag, norm, triangle, vector, vertex
+
+    if not isfinite(altura) or altura <= 0:
         raise ValueError("A altura desejada para a malha deve ser positiva.")
 
     faces = ler_triangulos_stl(caminho, limite_triangulos)
@@ -171,6 +188,7 @@ def carregar_stl(
 
     return compound(
         triangulos_vpython,
+        shininess=0.15,
         origin=posicao,
         pos=posicao,
     )
