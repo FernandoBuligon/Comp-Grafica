@@ -77,6 +77,20 @@ class RegrasJogo(unittest.TestCase):
         self.assertLess((lixo.pos - mao).mag, 1e-6)
         self.assertGreater(lixo.pos.y, .8)
 
+    def test_n_alterna_dia_e_noite_uma_vez_por_toque(self):
+        chamadas = []
+        self.jogo.iluminacao = SimpleNamespace(alternar=lambda: chamadas.append(1),
+                                               atualizar=lambda dt: None)
+        for teclas in ({'n'}, {'n'}, set(), {'n'}):
+            self.jogo.atualizar(teclas, .016)
+        self.assertEqual(len(chamadas), 2)
+
+    def test_sombra_acompanha_o_jogador(self):
+        antes = self.jogador.sombra.elipse.pos
+        self.jogo.atualizar({'w'}, .1)
+        self.assertNotEqual(self.jogador.sombra.elipse.pos, antes)
+        self.assertAlmostEqual(self.jogador.sombra.elipse.pos.y, main.ALTURA_SOMBRA)
+
     def test_menu_pausa_movimento(self):
         self.jogo.atualizar({'m', 'w'}, .016)
         self.assertEqual(self.jogador.pos, vector(0, 0, 0))
@@ -110,8 +124,9 @@ class RegrasJogo(unittest.TestCase):
 
     def test_cenario_mantem_todos_os_objetivos_acessiveis(self):
         with ExitStack() as pilha:
-            for nome in ('box', 'cylinder', 'sphere', 'compound',
-                         'criar_instancia_stl', 'criar_modelo_residuo'):
+            for nome in ('box', 'cylinder', 'sphere', 'ellipsoid', 'compound',
+                         'local_light', 'criar_instancia_stl',
+                         'criar_modelo_residuo'):
                 pilha.enter_context(patch.object(main, nome, return_value=SimpleNamespace()))
             main.criar_parque()
             lixeiras = main.criar_lixeiras()
