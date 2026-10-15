@@ -1,0 +1,73 @@
+{
+  "contract": "contrato.md: menu de pausa local, controles preservados, painel creme/verde, foco contido, dia fixo.",
+  "targetViewports": [
+    "1440x900",
+    "390x844"
+  ],
+  "accessibility": {
+    "status": "pass",
+    "evidence": "Tab percorreu 14 passos sem sair do diálogo; foco inicial em Continuar, M/Esc e 1/2/3 funcionaram. Contrastes medidos de 5.51:1 a 11.10:1. Preferência de movimento reduzido respeitada: nenhuma animação no menu. Botões rotulados e seções identificadas."
+  },
+  "responsive": {
+    "status": "pass",
+    "evidence": "Três seções renderizadas nas duas janelas; retângulo do diálogo contido na viewport e scrollWidth igual a clientWidth. Capturas revisadas, texto legível e ações acessíveis."
+  },
+  "contentStates": {
+    "loading": {
+      "status": "pass",
+      "evidence": "Botão Menu desabilitado no HTML até instalação dos ouvintes; teste aguardou habilitação antes do primeiro clique."
+    },
+    "success": {
+      "status": "pass",
+      "evidence": "Abertura, navegação, continuar e reiniciar verificados no jogo real; 31 testes Python passaram, incluindo pausa, reinício e tecla N sem alternância."
+    },
+    "empty": {
+      "status": "not-applicable",
+      "reason": "Menu com conteúdo estático completo, sem coleção que possa ficar vazia."
+    },
+    "error": {
+      "status": "not-applicable",
+      "reason": "Menu local sem operação de rede externa, formulário ou carregamento de dados com estado de erro próprio."
+    },
+    "partial": {
+      "status": "not-applicable",
+      "reason": "Seções estáticas distribuídas integralmente junto ao jogo."
+    },
+    "permission": {
+      "status": "not-applicable",
+      "reason": "Nenhuma ação do menu pede permissão ou acesso restrito."
+    }
+  },
+  "renderedEvidence": [
+    {
+      "viewport": "1440x900",
+      "artifact": "1440x900-secao-1.png",
+      "observation": "Seção 1 do menu de pausa, sem corte horizontal; botões e texto dentro da janela."
+    },
+    {
+      "viewport": "1440x900",
+      "artifact": "1440x900-secao-2.png",
+      "observation": "Seção 2 do menu de pausa, sem corte horizontal; botões e texto dentro da janela."
+    },
+    {
+      "viewport": "1440x900",
+      "artifact": "1440x900-secao-3.png",
+      "observation": "Seção 3 do menu de pausa, sem corte horizontal; botões e texto dentro da janela."
+    },
+    {
+      "viewport": "390x844",
+      "artifact": "390x844-secao-1.png",
+      "observation": "Seção 1 do menu de pausa, sem corte horizontal; botões e texto dentro da janela."
+    },
+    {
+      "viewport": "390x844",
+      "artifact": "390x844-secao-2.png",
+      "observation": "Seção 2 do menu de pausa, sem corte horizontal; botões e texto dentro da janela."
+    },
+    {
+      "viewport": "390x844",
+      "artifact": "390x844-secao-3.png",
+      "observation": "Seção 3 do menu de pausa, sem corte horizontal; botões e texto dentro da janela."
+    }
+  ]
+}
