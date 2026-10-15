@@ -1,0 +1,86 @@
+<style>
+#abrir-menu, #menu-parque {font: 15px/1.5 system-ui, sans-serif; color: #253d32; white-space: normal;}
+#abrir-menu {position: fixed; z-index: 10; right: 20px; bottom: 20px; padding: 11px 18px; background: #faf9f1; border: 1px solid #d9dfce; border-radius: 14px; box-shadow: 0 4px 18px #102b3330; cursor: pointer; font-weight: 650;}
+#menu-parque {box-sizing: border-box; width: min(600px, calc(100% - 32px)); max-height: calc(100dvh - 32px); margin: auto; padding: 30px; border: 1px solid #ffffff80; border-radius: 24px; background: #faf9f1; box-shadow: 0 24px 90px #0b251c66; overflow: auto;}
+#menu-parque::backdrop {background: #102c277a;}
+#menu-parque * {box-sizing: border-box;}
+#menu-parque button {font: inherit; cursor: pointer;}
+#menu-parque button:focus-visible, #abrir-menu:focus-visible {outline: 3px solid #b16b17; outline-offset: 3px;}
+#menu-parque .cabecalho {display: flex; justify-content: space-between; align-items: start; gap: 16px;}
+#menu-parque .marca {font-size: 11px; font-weight: 750; letter-spacing: .18em; color: #50674d; text-transform: uppercase; margin: 0 0 5px;}
+#menu-parque h1 {font-size: 32px; line-height: 1.15; letter-spacing: -.04em; margin: 0;}
+#menu-parque .subtitulo {margin: 10px 0 22px; color: #59695e;}
+#menu-parque .fechar {background: #e9ecdf; border: 0; width: 42px; height: 42px; border-radius: 50%; font-size: 24px; flex: 0 0 auto;}
+#menu-parque nav {display: flex; gap: 4px; border-bottom: 1px solid #d5ddce; margin-bottom: 22px;}
+#menu-parque nav button {flex: 1; padding: 12px 4px; background: transparent; color: #59695e; border: 0; border-bottom: 3px solid transparent; font-weight: 650;}
+#menu-parque nav button[aria-pressed="true"] {color: #214d36; border-bottom-color: #39734c;}
+#menu-parque h2 {font-size: 20px; letter-spacing: -.02em; margin: 0 0 8px;}
+#menu-parque p {margin-top: 0;}
+#menu-parque .conteudo {min-height: 248px;}
+#menu-parque .comandos {margin: 16px 0;}
+#menu-parque .comando {display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 9px 0; border-bottom: 1px solid #e1e5d8;}
+#menu-parque kbd, #abrir-menu kbd {font: 650 12px/1.5 system-ui, sans-serif; display: inline-block; text-align: center; min-width: 25px; padding: 2px 6px; background: #e9ecdf; border: 1px solid #cbd4c2; border-radius: 5px; color: #39523d;}
+#menu-parque .nota {font-size: 13px; color: #59695e;}
+#menu-parque .pontos {display: flex; gap: 28px; padding: 12px 0;}
+#menu-parque .pontos strong {display: block; font-size: 26px; color: #2f6844;}
+#menu-parque .pontos .erro {color: #99502e;}
+#menu-parque .categorias {display: flex; flex-wrap: wrap; gap: 8px; padding: 0; list-style: none;}
+#menu-parque .categorias li {border-left: 4px solid var(--cor); padding: 2px 10px;}
+#menu-parque footer {border-top: 1px solid #d5ddce; padding-top: 20px; display: flex; flex-wrap: wrap; gap: 10px;}
+#menu-parque footer button {min-height: 46px; padding: 10px 18px; border-radius: 10px; font-weight: 650;}
+#menu-parque .continuar {background: #28563b; color: #fffdf5; border: 1px solid #28563b; flex: 1;}
+#menu-parque .reiniciar {background: transparent; color: #39523d; border: 1px solid #bccab5;}
+#menu-parque button:hover {filter: brightness(.94);}
+#menu-parque [hidden] {display: none;}
+@media (max-width: 480px) {
+ #menu-parque {padding: 22px 18px; border-radius: 18px;}
+ #menu-parque h1 {font-size: 28px;}
+ #menu-parque nav button {font-size: 13px;}
+ #menu-parque .conteudo {min-height: 0;}
+ #menu-parque nav kbd {display: none;}
+ #menu-parque footer button {width: 100%;}
+ #abrir-menu {right: 12px; bottom: 12px;}
+}
+</style>
+<button id="abrir-menu" type="button" aria-haspopup="dialog" disabled>Menu &nbsp; <kbd>M</kbd></button>
+<dialog id="menu-parque" aria-labelledby="titulo-menu" aria-describedby="subtitulo-menu">
+ <div class="cabecalho">
+  <div><p class="marca">Parque • Coleta seletiva</p><h1 id="titulo-menu">Uma pausa no parque</h1></div>
+  <button class="fechar" type="button" data-acao="continuar" aria-label="Fechar menu">×</button>
+ </div>
+ <p id="subtitulo-menu" class="subtitulo">Respire um pouco. Sua partida está pausada.</p>
+ <nav aria-label="Seções do menu">
+  <button type="button" data-acao="1" aria-pressed="true" aria-controls="secao-1">Como jogar <kbd>1</kbd></button>
+  <button type="button" data-acao="2" aria-pressed="false" aria-controls="secao-2">Regras <kbd>2</kbd></button>
+  <button type="button" data-acao="3" aria-pressed="false" aria-controls="secao-3">Sobre <kbd>3</kbd></button>
+ </nav>
+ <div class="conteudo">
+  <section id="secao-1" aria-labelledby="titulo-comandos">
+   <h2 id="titulo-comandos">Um parque limpo começa com você.</h2>
+   <p>Explore, recolha os resíduos e encontre a lixeira certa.</p>
+   <div class="comandos">
+    <div class="comando"><span>Andar para frente e para trás</span><span><kbd>W</kbd> <kbd>S</kbd></span></div>
+    <div class="comando"><span>Girar para os lados</span><span><kbd>A</kbd> <kbd>D</kbd></span></div>
+    <div class="comando"><span>Coletar ou descartar</span><kbd>E</kbd></div>
+   </div>
+   <p class="nota">Use <kbd>M</kbd> ou <kbd>Esc</kbd> para voltar à partida.</p>
+  </section>
+  <section id="secao-2" aria-labelledby="titulo-regras" hidden>
+   <h2 id="titulo-regras">Cada resíduo tem seu lugar.</h2>
+   <p>Carregue um item por vez e aproxime-se da lixeira correspondente. Recolha os seis resíduos para completar a partida.</p>
+   <ul class="categorias"><li style="--cor:#3565a2">Papel</li><li style="--cor:#b24537">Plástico</li><li style="--cor:#39714c">Vidro</li></ul>
+   <div class="pontos"><div><strong>+100</strong>descarte correto</div><div><strong class="erro">−25</strong>lixeira incorreta</div></div>
+   <p class="nota">Errou a lixeira? O item continua com você. Tente outra.</p>
+  </section>
+  <section id="secao-3" aria-labelledby="titulo-sobre" hidden>
+   <h2 id="titulo-sobre">Pequenos gestos, um lugar melhor.</h2>
+   <p>Um jogo educativo sobre coleta seletiva e o cuidado com os espaços que compartilhamos.</p>
+   <p>Explore o parque no seu ritmo e pratique a separação de papel, plástico e vidro.</p>
+   <p class="nota">Projeto de Computação Gráfica feito com Python e VPython.<br>Modelos de natureza: Kenney Nature Kit (CC0).</p>
+  </section>
+ </div>
+ <footer>
+  <button class="continuar" type="button" data-acao="continuar" autofocus>Continuar partida &nbsp; →</button>
+  <button class="reiniciar" type="button" data-acao="reiniciar" title="Zera os pontos e devolve os resíduos ao parque">Recomeçar <kbd>R</kbd></button>
+ </footer>
+</dialog>

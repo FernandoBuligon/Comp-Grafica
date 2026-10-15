@@ -19,7 +19,7 @@ class RegrasJogo(unittest.TestCase):
         self.rotulos.start()
         self.addCleanup(self.rotulos.stop)
         main.OBSTACULOS.clear()
-        cena = SimpleNamespace(width=960, height=600, camera=SimpleNamespace(), bind=lambda *a: None)
+        cena = SimpleNamespace(width=960, height=600, camera=SimpleNamespace(), bind=lambda *a: None, append_to_caption=lambda *a: None)
         with ExitStack() as pilha:
             for nome in ('box', 'cylinder', 'sphere', 'ellipsoid', 'compound'):
                 pilha.enter_context(patch.object(main, nome, side_effect=lambda *a, **kw: SimpleNamespace()))
@@ -83,6 +83,26 @@ class RegrasJogo(unittest.TestCase):
         for teclas in ({'n'}, {'n'}, set(), {'n'}):
             self.jogo.atualizar(teclas, .016)
         self.assertEqual(chamadas, [.016] * 4)
+
+    def test_menu_html_pausa_navega_continua_e_reinicia(self):
+        jogo = self.jogo
+        def acao(nome):
+            jogo.receber_acao_menu(SimpleNamespace(key='menu:' + nome))
+            jogo.atualizar(set(), .016)
+        acao('alternar')
+        self.assertTrue(jogo.menu_aberto)
+        antes = self.jogador.pos
+        jogo.atualizar({'w'}, .016)
+        self.assertEqual(self.jogador.pos, antes)
+        acao('2')
+        self.assertEqual(jogo.secao_menu, '2')
+        acao('continuar')
+        self.assertFalse(jogo.menu_aberto)
+        jogo.pontuacao = 100
+        acao('alternar')
+        acao('reiniciar')
+        self.assertFalse(jogo.menu_aberto)
+        self.assertEqual(jogo.pontuacao, 0)
 
     def test_sombra_acompanha_o_jogador(self):
         antes = self.jogador.sombra.elipse.pos

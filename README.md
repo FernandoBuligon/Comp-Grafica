@@ -97,7 +97,7 @@ Se o ambiente virtual já existe e aparece o erro
 .\.venv\Scripts\python.exe main.py
 ```
 
-Ao executar pelo terminal, o VPython abre a cena 3D no navegador. O estado e as mensagens aparecem sobre a própria cena. Pressione `M` ou `Esc` para abrir o menu lateral; com ele aberto, use `1`, `2` e `3` para acessar as instruções, regras e informações do projeto. Clique dentro da cena antes de usar o teclado. Para encerrar o processo, volte ao terminal e pressione `Ctrl+C`.
+Ao executar pelo terminal, o VPython abre a cena 3D no navegador. O estado e as mensagens aparecem sobre a própria cena. Pressione `M` ou `Esc` para abrir o menu de pausa; com ele aberto, use `1`, `2` e `3` para acessar as instruções, regras e informações do projeto. Clique dentro da cena antes de usar o teclado. Para encerrar o processo, volte ao terminal e pressione `Ctrl+C`.
 
 Execute `main.py` diretamente pelo terminal, e não dentro de um notebook Jupyter: o notebook pode capturar as teclas antes que elas cheguem à cena do VPython.
 
@@ -141,6 +141,8 @@ O controle é em terceira pessoa: a câmera fica atrás do jogador e gira, com u
 - Um descarte correto vale **+100 pontos** e remove o objeto da cena.
 - Um descarte incorreto vale **-25 pontos** e o objeto continua com o jogador.
 - O jogo termina quando os seis resíduos forem descartados corretamente.
+
+O menu de pausa também pode ser aberto pelo botão **Menu**. As seções Como jogar, Regras e Sobre aceitam cliques ou os atalhos 1, 2 e 3. Os arquivos `menu.html` e `menu.js` devem acompanhar `main.py`. A iluminação é sempre diurna.
 
 ## Principais decisões do MVP
 

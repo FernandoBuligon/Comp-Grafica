@@ -5,6 +5,9 @@ em módulos pequenos. As funções de criação deixam visíveis os conceitos de
 primitivas, coordenadas, escala, cores e iluminação.
 """
 
+from collections import deque
+import json
+
 from math import atan2, cos, pi, radians, sin, tau
 from pathlib import Path
 from textwrap import wrap
@@ -142,6 +145,10 @@ def acompanhar_janela(cena):
     """
     script = Path(__file__).with_name("janela.js").read_text(encoding="utf-8")
     cena.append_to_caption(f"<script>{script}</script>")
+    pasta = Path(__file__).parent
+    cena.append_to_caption((pasta / "menu.html").read_text(encoding="utf-8"))
+    menu = (pasta / "menu.js").read_text(encoding="utf-8")
+    cena.append_to_caption(f"<script>{menu}</script>")
 
 
 def formatar_estado_interface(pontuacao, restantes, carregando, largura):
@@ -496,6 +503,7 @@ class JogoReciclagem:
     def __init__(self, cena, jogador, lixos, lixeiras, iluminacao=None):
         self.cena = cena
         self.iluminacao = iluminacao
+        self.acoes_menu = deque()
         self.jogador = jogador
         self.lixos = lixos
         self.lixeiras = lixeiras
@@ -529,21 +537,7 @@ class JogoReciclagem:
             box=True,
             line=False,
         )
-        self.rotulo_menu = label(
-            pos=vector(cena.width - 16, cena.height / 2, 0),
-            pixel_pos=True,
-            text="",
-            align="right",
-            height=15,
-            color=color.white,
-            background=vector(0.03, 0.06, 0.10),
-            opacity=0.9,
-            border=12,
-            box=True,
-            line=False,
-            visible=False,
-        )
-
+        self.cena.bind("keydown", self.receber_acao_menu)
         self.cena.bind("resize", self.ao_redimensionar_cena)
         self.ajustar_layout_cena()
         self.atualizar_camera()
@@ -552,44 +546,20 @@ class JogoReciclagem:
         """Abre ou fecha o painel sobreposto e pausa a ação do jogo."""
         self.menu_aberto = not self.menu_aberto
         self.secao_menu = None
-        self.rotulo_menu.visible = self.menu_aberto
         self.atualizar_texto_menu()
 
+    def receber_acao_menu(self, evento):
+        """Recebe ações dos botões HTML pela conexão de eventos do VPython."""
+        chave = evento.key
+        if chave.startswith("menu:"):
+            self.acoes_menu.append(chave[5:])
+
     def atualizar_texto_menu(self):
-        """Atualiza a opção selecionada no painel lateral."""
-        conteudos = {
-            "1": (
-                "COMO JOGAR\n"
-                "W / S  Andar para frente/trás\n"
-                "A / D  Girar\n"
-                "E  Coletar ou descartar\n"
-                "R  Reiniciar partida\n\n"
-                "Clique na cena antes de\nusar o teclado."
-            ),
-            "2": (
-                "REGRAS\n"
-                "Carregue um resíduo por vez.\n"
-                "Leve-o à lixeira correta.\n\n"
-                f"Acerto: +{PONTOS_ACERTO} pontos\n"
-                f"Erro: -{PONTOS_ERRO} pontos"
-            ),
-            "3": (
-                "SOBRE O JOGO\n"
-                "Jogo educativo sobre\n"
-                "coleta seletiva feito com\n"
-                "Python e VPython."
-            ),
-        }
-        texto = (
-            "MENU\n\n"
-            "[1] Como jogar\n"
-            "[2] Regras\n"
-            "[3] Sobre o jogo\n\n"
-            "[M ou Esc] Fechar"
-        )
-        if self.secao_menu in conteudos:
-            texto += f"\n\n──────────────\n\n{conteudos[self.secao_menu]}"
-        self.rotulo_menu.text = texto
+        estado = json.dumps({"aberto": self.menu_aberto,
+                             "secao": self.secao_menu or "1"})
+        self.cena.append_to_caption(
+            '<script>window.dispatchEvent(new CustomEvent("estado-menu", '
+            f'{{detail:{estado}}}));</script>')
 
     def atualizar_entrada_menu(self, teclas):
         """Trata atalhos do menu usando uma ação por toque."""
@@ -625,7 +595,7 @@ class JogoReciclagem:
         self.encerrado = False
         self.menu_aberto = False
         self.secao_menu = None
-        self.rotulo_menu.visible = False
+        self.atualizar_texto_menu()
         if self.rotulo_vitoria is not None:
             self.rotulo_vitoria.visible = False
         self.jogador.reposicionar(vector(0, 0, 9.8), vector(0, 0, -1))
@@ -636,6 +606,18 @@ class JogoReciclagem:
     def atualizar(self, teclas, delta_t):
         if self.iluminacao is not None:
             self.iluminacao.atualizar(delta_t)
+        while self.acoes_menu:
+            acao = self.acoes_menu.popleft()
+            if acao == "alternar":
+                self.alternar_menu()
+            elif acao == "continuar" and self.menu_aberto:
+                self.alternar_menu()
+            elif acao in {"1", "2", "3"} and self.menu_aberto:
+                self.secao_menu = acao
+                self.atualizar_texto_menu()
+            elif acao == "reiniciar":
+                self.reiniciar()
+                return
         r_pressionado = "r" in teclas
         reiniciou = r_pressionado and not self.r_estava_pressionado
         self.r_estava_pressionado = r_pressionado
@@ -754,7 +736,7 @@ class JogoReciclagem:
         self.atualizar_rotulo_vitoria()
 
     def atualizar_posicoes_interface(self):
-        """Mantém HUD e menu ancorados ao canvas durante o redimensionamento."""
+        """Mantém HUD ancorado ao canvas durante o redimensionamento."""
         compacto = self.cena.width < LARGURA_HUD_COMPACTO
         altura_hud = 12 if compacto else 14
         self.rotulo_hud.height = altura_hud
@@ -763,13 +745,6 @@ class JogoReciclagem:
         self.rotulo_hud.pos = vector(
             14,
             self.cena.height - meia_altura_hud - 14,
-            0,
-        )
-
-        self.rotulo_menu.height = 13 if compacto else 15
-        self.rotulo_menu.pos = vector(
-            self.cena.width - 16,
-            self.cena.height * 0.62,
             0,
         )
 
@@ -901,7 +876,7 @@ class JogoReciclagem:
 
         self.encerrado = True
         self.menu_aberto = False
-        self.rotulo_menu.visible = False
+        self.atualizar_texto_menu()
         self.mensagem = (
             "PARQUE LIMPO! Parabéns! "
             f"Pontuação final: {self.pontuacao}."
