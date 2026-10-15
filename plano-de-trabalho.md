@@ -1,5 +1,9 @@
 # Plano de Trabalho — Parque da Reciclagem 3D
 
+## Revisão de 14/10/2026
+
+Prioridade solicitada: ajustes gerais, sobretudo modelos 3D. Implementados nesta revisão: validação de STL, resíduos detalhados, lixeiras abertas, cache por cena, redução de atualizações ociosas, colisões simples e reinício com `R`. Foram adicionados testes automatizados de geometria e regras. Esta revisão não conclui todo o plano: animações, cronômetro, dificuldades, novas categorias e tela inicial continuam pendentes. Por orientação expressa do usuário, não criar commits nesta sessão.
+
 ## Objetivo geral
 
 Evoluir o MVP atual do **Parque da Reciclagem 3D**, mantendo sua proposta acadêmica e sua implementação em Python com VPython, adicionando melhorias de jogabilidade, interface, desempenho e adaptação a diferentes tamanhos de tela.

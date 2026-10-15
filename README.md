@@ -5,14 +5,19 @@ MVP acadêmico de um jogo educativo sobre coleta seletiva, feito somente com Pyt
 ## Estrutura
 
 ```text
-computations/
+Comp-Grafica/
 ├── carregador_stl.py
 ├── kenney_nature-kit/
 ├── main.py
+├── modelos_residuos.py
+├── colisoes.py
+├── animacao.py
+├── requirements.txt
+├── tests/
 └── README.md
 ```
 
-O jogo permanece concentrado em `main.py` para facilitar a apresentação. Apenas a leitura da malha externa foi isolada em `carregador_stl.py`:
+O jogo permanece concentrado em `main.py` para facilitar a apresentação. A leitura de STL, a geometria dos resíduos e as colisões ficam em módulos pequenos:
 
 - `Jogador`: cria o personagem, guarda posição/direção e aplica movimento;
 - `Lixo`: guarda nome, tipo, posição, modelo e estado ativo;
@@ -20,6 +25,9 @@ O jogo permanece concentrado em `main.py` para facilitar a apresentação. Apena
 - `JogoReciclagem`: coordena entrada, interação, pontuação, câmera, interface e vitória;
 - funções `criar_*`: montam cenário, árvores, bancos, lixeiras e resíduos;
 - `carregador_stl.py`: lê STL binário ou ASCII e cria uma malha de triângulos;
+- `modelos_residuos.py`: constrói os seis resíduos com perfis de revolução e primitivas;
+- `colisoes.py`: verifica obstáculos no plano XZ e permite deslizar pelas bordas;
+- `animacao.py`: calcula, sem depender do VPython, a pose articulada do personagem (caminhada, respiração, coleta e arremesso);
 - `executar`: contém o loop principal de animação.
 
 ## Assets STL testados
@@ -57,7 +65,7 @@ Instale o Python 3.12 e, dentro desta pasta, execute:
 ```powershell
 py -3.12 -m venv .venv
 .\.venv\Scripts\python.exe -m pip install --upgrade pip
-.\.venv\Scripts\python.exe -m pip install "setuptools<81" vpython
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt
 .\.venv\Scripts\python.exe main.py
 ```
 
@@ -66,7 +74,7 @@ py -3.12 -m venv .venv
 ```bash
 python3.12 -m venv .venv
 ./.venv/bin/python -m pip install --upgrade pip
-./.venv/bin/python -m pip install "setuptools<81" 
+./.venv/bin/python -m pip install -r requirements.txt
 ./.venv/bin/python main.py
 ```
 
@@ -77,7 +85,7 @@ Se o ambiente virtual já existe e aparece o erro
 `No module named 'pkg_resources'`, não é preciso recriá-lo. No Windows, execute:
 
 ```powershell
-.\.venv\Scripts\python.exe -m pip install "setuptools<81" vpython
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt
 .\.venv\Scripts\python.exe main.py
 ```
 
@@ -85,17 +93,39 @@ Ao executar pelo terminal, o VPython abre a cena 3D no navegador. O estado e as 
 
 Execute `main.py` diretamente pelo terminal, e não dentro de um notebook Jupyter: o notebook pode capturar as teclas antes que elas cheguem à cena do VPython.
 
+## Modelos 3D e melhorias implementadas
+
+Os resíduos agora possuem silhuetas distintas: papel impresso, caixa aberta com abas e etiqueta, garrafa plástica com tampa e rótulo, garrafa de vidro com gargalo, copo cônico e pote com borda. Copo, pote e garrafa de vidro possuem paredes internas e aberturas reais. Cada resíduo é um `compound`, com origem na base, para transportar todas as partes juntas. Os perfis usam 16 segmentos e menos de 500 triângulos por resíduo. O vidro usa cor e brilho, sem transparência, para manter a leitura da forma e evitar sobreposição visual das paredes.
+
+As lixeiras possuem paredes, fundo, borda aberta e alças. Os STL naturais preservam o estilo low-poly, com brilho reduzido. O cache pertence à cena que criou os modelos e os protótipos são construídos na origem. O importador rejeita arquivos truncados, faces ASCII incompletas e coordenadas infinitas ou NaN antes de criar a malha.
+
+Há colisões aproximadas com troncos das árvores, bancos, lago, lixeiras, cercas, rochas maiores, tocos e troncos caídos. Flores e vegetação pequena continuam atravessáveis. O movimento é subdividido e permite deslizar pelas bordas. As colisões são aproximações geométricas, não testes contra cada triângulo.
+
+Pressione **R** durante a partida ou após a vitória para restaurar jogador, resíduos e pontuação. O cenário e os modelos são reutilizados. A câmera e o objeto carregado são atualizados quando o jogador se move; a formatação do HUD só ocorre quando seu estado muda.
+
+## Personagem articulado e animações
+
+O personagem deixou de ser um único `compound`: cada membro (tronco com cabeça e boné, coxas, canelas, pés, braços e antebraços) é um `compound` próprio com o **ponto de giro na articulação**. A cada quadro, `animacao.AnimadorPersonagem` devolve, para cada peça, a posição do pivô e um ângulo no plano sagital; `Jogador.aplicar_pose` converte isso para o mundo definindo `axis` e `up` de cada peça (rotação em torno do eixo lateral seguida do giro de direção).
+
+- **Caminhada:** a fase do passo avança proporcionalmente à distância realmente percorrida, então o personagem para de mexer as pernas ao encostar em um obstáculo. Os braços balançam em oposição às pernas.
+- **Cinemática inversa:** as pernas recebem um alvo para o tornozelo e o joelho é calculado pela lei dos cossenos. Assim os pés continuam no chão quando o quadril abaixa.
+- **Coleta:** ao pressionar **E**, o personagem se agacha, inclina o tronco, estende os braços até o item, que é levado do chão às mãos e transportado na altura do peito.
+- **Descarte:** num acerto, os braços fazem um arremesso e o resíduo segue um arco parabólico até a lixeira. A regra e a pontuação mudam na hora; só o modelo some ao fim do voo.
+- **Lixeiras:** a tampa gira na dobradiça traseira e abre quando o jogador chega com um resíduo.
+- **Suavização:** o giro do corpo e as transições entre poses usam aproximação exponencial dependente de `delta_t`, estável em qualquer taxa de quadros.
+
 ## Controles e regras
 
-Use o conjunto de teclas **WASD** para caminhar:
+O controle é em terceira pessoa: a câmera fica atrás do jogador e gira, com um leve atraso, para a direção em que ele olha.
 
 | Tecla | Ação |
 |---|---|
-| `W` | andar para a frente do parque |
-| `S` | andar para trás |
-| `A` | andar para a esquerda |
-| `D` | andar para a direita |
+| `W` | andar para a frente, na direção do olhar |
+| `S` | andar de ré (mais devagar), sem virar |
+| `A` | girar para a esquerda |
+| `D` | girar para a direita |
 | `E` | coletar o lixo próximo ou tentar descartá-lo |
+| `R` | reiniciar a partida, inclusive após a vitória |
 | `M` ou `Esc` | abrir ou fechar o menu sobreposto |
 | `1`, `2`, `3` | selecionar uma opção quando o menu estiver aberto |
 
@@ -112,7 +142,7 @@ Use o conjunto de teclas **WASD** para caminhar:
 - **Câmera simples:** a câmera tem inclinação fixa e translada junto com o jogador. Assim, os controles continuam coerentes com a tela.
 - **Parque ampliado:** o terreno mede 34 × 26 unidades e possui caminho principal, ramificação transversal, praça, lago e áreas verdes periféricas.
 - **Instâncias eficientes:** árvores, cercas, plantas e outros decorativos repetidos reutilizam protótipos STL com `clone()`.
-- **Proximidade em vez de física:** `mag(jogador.pos - objeto.pos)` mede a distância para coletar e descartar.
+- **Interação por proximidade:** `mag(jogador.pos - objeto.pos)` mede a distância para coletar e descartar.
 - **Cenário determinístico:** as posições são fixas, o que torna a demonstração em sala reproduzível.
 - **Identificação acessível:** as lixeiras usam as cores usuais da coleta seletiva, mas também exibem `PAPEL`, `PLÁSTICO` e `VIDRO` por texto.
 
@@ -147,17 +177,35 @@ Use o conjunto de teclas **WASD** para caminhar:
 
 ## Limites intencionais do MVP
 
-O personagem não colide com árvores, bancos, lago ou objetos decorativos; apenas os limites externos do parque restringem sua posição. Também não há inventário, áudio, fases, física avançada ou salvamento. Esses itens ficaram fora para preservar o fluxo acadêmico pedido.
+Não há inventário, áudio, fases, física avançada ou salvamento. O plano de trabalho ainda prevê cronômetro, dificuldades, categorias adicionais e tela inicial; esta revisão priorizou os modelos 3D, as colisões, o reinício e a robustez do jogo.
 
 ## Melhorias futuras (não implementadas)
 
-- colisão simples com árvores, bancos, lago, lixeiras e decorações;
-- pequenas animações de caminhada e coleta;
 - cronômetro e níveis de dificuldade;
 - mais categorias, como metal e orgânico;
 - perguntas educativas após erros;
-- tela inicial e opção de reiniciar;
-- efeitos sonoros e mais modelos 3D próprios.
+- tela inicial;
+- efeitos sonoros.
+
+## Testes automatizados
+
+Com o ambiente instalado, execute:
+
+```bash
+./.venv/bin/python -m unittest discover -s tests -v
+```
+
+No Windows, use `.\.venv\Scripts\python.exe -m unittest discover -s tests -v`.
+Os testes verificam os 19 STL reais, a cinemática inversa e as poses da animação, arquivos inválidos, fechamento e orientação das malhas de revolução, colisões, movimento diagonal, pausa, coleta, pontuação, vitória e reinício. Não abrem navegador. Os testes de regras usam os vetores reais do VPython com objetos visuais substituídos; a aparência deve ser conferida também no navegador.
+
+Acrescente ao roteiro manual:
+
+8. Confira gargalos, tampas, aberturas dos recipientes e abas da caixa; transporte cada item e confirme que todas as partes se movem juntas.
+9. Caminhe contra árvores, bancos, lago e lixeiras; verifique bloqueio e deslizamento lateral, mantendo os resíduos acessíveis.
+10. Pressione `R` carregando um objeto e depois da vitória: posição inicial, seis resíduos e zero pontos devem ser restaurados.
+11. Redimensione a cena, abra o menu e confirme que os textos continuam utilizáveis.
+12. Caminhe e pare: pernas e braços devem alternar e voltar ao repouso; encoste em uma árvore e confirme que as pernas param.
+13. Colete um item (agachamento) e descarte-o certo (tampa abre, arremesso em arco).
 
 ## Documentação oficial consultada
 
