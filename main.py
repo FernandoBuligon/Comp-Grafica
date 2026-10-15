@@ -21,6 +21,7 @@ try:
         ellipsoid,
         keysdown,
         label,
+        local_light,
         mag,
         rate,
         sphere,
@@ -51,7 +52,12 @@ from animacao import (
 from carregador_stl import carregar_stl
 from modelos_residuos import criar_modelo_residuo
 from colisoes import Obstaculo, mover_com_colisao
-
+from iluminacao import (
+    DIRECAO_SOL,
+    direcao_sombra,
+    geometria_sombra,
+    parametros_iluminacao,
+)
 
 
 FPS = 60
@@ -88,6 +94,17 @@ DURACAO_VOO_RESIDUO = .45
 ALTURA_VOO_RESIDUO = .9
 PONTOS_ACERTO = 100
 PONTOS_ERRO = 25
+# Raio e altura aproximados usados para projetar a sombra de cada decoração.
+SOMBRAS_DECORACOES = {
+    "plant_bush.stl": (.55, .9),
+    "plant_bushSmall.stl": (.38, .58),
+    "log_large.stl": (.75, .5),
+    "stump_round.stl": (.45, .6),
+    "mushroom_redGroup.stl": (.25, .4),
+    "rock_largeC.stl": (.55, .6),
+    "rock_tallC.stl": (.45, 1.15),
+    "sign.stl": (.3, 2.0),
+}
 DIRETORIO_STL = (
     Path(__file__).resolve().parent
     / "kenney_nature-kit"
@@ -97,6 +114,12 @@ DIRETORIO_STL = (
 CAMINHO_ROCHA_STL = DIRETORIO_STL / "rock_smallA.stl"
 PROTOTIPOS_STL = {}
 OBSTACULOS = []
+SOMBRAS = []
+POSTES = []
+ALTURA_SOMBRA = 0.085          # acima dos caminhos e da praça
+TAXA_TRANSICAO_NOITE = 1.6
+VELOCIDADE_NUVENS = 0.6
+LIMITE_NUVENS_X = 70.0
 
 NOMES_TIPOS = {
     "papel": "papel",
@@ -195,6 +218,56 @@ def formatar_hud_interface(
     return f"{estado}\n{mensagem_formatada}"
 
 
+class Sombra:
+    """Sombra projetada aproximada por uma elipse escura e translúcida no chão.
+
+    O tamanho e o deslocamento vêm de ``iluminacao.geometria_sombra``; a
+    intensidade global muda com o ciclo dia/noite.
+    """
+
+    def __init__(self, posicao, raio, altura):
+        self.raio = raio
+        self.altura = altura
+        self.intensidade = parametros_iluminacao(0)["opacidade_sombra"]
+        self.fator_elevacao = 1.0
+        self.elipse = ellipsoid(
+            pos=vector(posicao.x, ALTURA_SOMBRA, posicao.z),
+            size=vector(1, 0.01, 1),
+            color=vector(0.02, 0.04, 0.02),
+            opacity=self.intensidade,
+            shininess=0,
+        )
+        self.posicionar(posicao)
+        SOMBRAS.append(self)
+
+    def posicionar(self, base, elevacao=0.0):
+        """Recalcula a projeção para um objeto com base em ``base``."""
+        dx, dz, comprimento, largura, fator = geometria_sombra(
+            self.raio, self.altura, max(0.0, elevacao))
+        (sx, sz), _ = direcao_sombra()
+        self.elipse.pos = vector(base.x + dx, ALTURA_SOMBRA, base.z + dz)
+        self.elipse.axis = vector(sx, 0, sz) * comprimento
+        self.elipse.size = vector(comprimento, 0.01, largura)
+        if fator != self.fator_elevacao:
+            self.fator_elevacao = fator
+            self.aplicar_opacidade()
+
+    def definir_intensidade(self, intensidade):
+        self.intensidade = intensidade
+        self.aplicar_opacidade()
+
+    def aplicar_opacidade(self):
+        self.elipse.opacity = self.intensidade * self.fator_elevacao
+
+    @property
+    def visible(self):
+        return self.elipse.visible
+
+    @visible.setter
+    def visible(self, valor):
+        self.elipse.visible = valor
+
+
 class Jogador:
     """Personagem articulado: cada membro é um compound com ponto de giro próprio.
 
@@ -210,6 +283,7 @@ class Jogador:
         self.distancia_quadro = 0.0
         self.animador = AnimadorPersonagem()
         self.partes = self._criar_partes()
+        self.sombra = Sombra(self.pos, raio=0.36, altura=1.45)
         self.aplicar_pose()
 
     @staticmethod
@@ -298,6 +372,7 @@ class Jogador:
             peca.pos = self.ponto_local(segmento.f, segmento.u, segmento.lado)
             peca.axis = frente * c + cima * s
             peca.up = cima * c - frente * s
+        self.sombra.posicionar(self.pos)
 
     def posicao_mao(self):
         f, u = self.animador.pose.mao
@@ -352,6 +427,7 @@ class Lixo:
         modelo,
         deslocamento_modelo=vector(0, 0, 0),
         altura_rotulo=0.9,
+        sombra=None,
     ):
         self.nome = nome
         self.tipo = tipo
@@ -360,6 +436,7 @@ class Lixo:
         self.posicao_inicial = vector(posicao.x, posicao.y, posicao.z)
         self.deslocamento_modelo = deslocamento_modelo
         self.altura_rotulo = altura_rotulo
+        self.sombra = sombra
         self.ativo = True
         self.rotulo = label(
             pos=self.pos + vector(0, self.altura_rotulo, 0),
@@ -376,6 +453,14 @@ class Lixo:
         self.pos = vector(nova_posicao.x, nova_posicao.y, nova_posicao.z)
         self.modelo.pos = self.pos + self.deslocamento_modelo
         self.rotulo.pos = self.pos + vector(0, self.altura_rotulo, 0)
+        self.atualizar_sombra()
+
+    def atualizar_sombra(self):
+        """A sombra acompanha o resíduo no chão, nas mãos e durante o voo."""
+        if self.sombra is None:
+            return
+        self.sombra.visible = self.modelo.visible
+        self.sombra.posicionar(self.pos, elevacao=self.pos.y)
 
 
 class Lixeira:
@@ -387,6 +472,7 @@ class Lixeira:
 
         OBSTACULOS.append(Obstaculo(self.pos.x, self.pos.z,
                                     meia_largura=.75, meia_profundidade=.64))
+        Sombra(self.pos, raio=.78, altura=1.8)
         partes = []
         def bloco(deslocamento, tamanho, material):
             partes.append(box(pos=self.pos + vector(*deslocamento),
@@ -437,8 +523,10 @@ class Lixeira:
 class JogoReciclagem:
     """Coordena regras, entrada, câmera, interface, pontuação e vitória."""
 
-    def __init__(self, cena, jogador, lixos, lixeiras):
+    def __init__(self, cena, jogador, lixos, lixeiras, iluminacao=None):
         self.cena = cena
+        self.iluminacao = iluminacao
+        self.n_estava_pressionado = False
         self.jogador = jogador
         self.lixos = lixos
         self.lixeiras = lixeiras
@@ -506,6 +594,7 @@ class JogoReciclagem:
                 "W / S  Andar para frente/trás\n"
                 "A / D  Girar\n"
                 "E  Coletar ou descartar\n"
+                "N  Alternar dia/noite\n"
                 "R  Reiniciar partida\n\n"
                 "Clique na cena antes de\nusar o teclado."
             ),
@@ -560,6 +649,7 @@ class JogoReciclagem:
             lixo.definir_posicao(lixo.posicao_inicial)
             lixo.modelo.visible = True
             lixo.rotulo.visible = True
+            lixo.atualizar_sombra()
         self.lixo_carregado = None
         self.origem_coleta = None
         self.voos = []
@@ -576,6 +666,7 @@ class JogoReciclagem:
         self.atualizar_interface()
 
     def atualizar(self, teclas, delta_t):
+        self.atualizar_iluminacao(teclas, delta_t)
         r_pressionado = "r" in teclas
         reiniciou = r_pressionado and not self.r_estava_pressionado
         self.r_estava_pressionado = r_pressionado
@@ -607,6 +698,16 @@ class JogoReciclagem:
         self.atualizar_animacoes(delta_t)
 
         self.atualizar_interface()
+
+    def atualizar_iluminacao(self, teclas, delta_t):
+        """A tecla N alterna dia e noite; nuvens e transições seguem sempre."""
+        if self.iluminacao is None:
+            return
+        n_pressionado = "n" in teclas
+        if n_pressionado and not self.n_estava_pressionado:
+            self.iluminacao.alternar()
+        self.n_estava_pressionado = n_pressionado
+        self.iluminacao.atualizar(delta_t)
 
     def atualizar_jogador(self, teclas, delta_t):
         """Controle em terceira pessoa: A/D giram, W/S andam na direção do olhar."""
@@ -653,6 +754,7 @@ class JogoReciclagem:
             )
             if t >= 1.0:
                 lixo.modelo.visible = False
+                lixo.atualizar_sombra()
                 self.voos.remove(voo)
 
     def camera_precisa_atualizar(self):
@@ -882,7 +984,7 @@ def configurar_cena():
         width=largura_cena,
         height=altura_cena,
         resizable=True,
-        background=vector(0.50, 0.76, 0.92),
+        background=vector(*parametros_iluminacao(0)["fundo"]),
     )
     cena.autoscale = False
     cena.userspin = False
@@ -890,24 +992,176 @@ def configurar_cena():
     cena.userzoom = False
     cena.up = vector(0, 1, 0)
     cena.fov = calcular_fov_responsivo(cena.width, cena.height)
-
-    # No VPython, direction aponta para a posição relativa da fonte. Por isso
-    # ambas as luzes usam Y positivo: a iluminação vem de cima do parque.
-    cena.lights = []
-    cena.ambient = vector(0.14, 0.15, 0.16)
-
-    # Luz principal quente, semelhante ao Sol acima e à esquerda da cena.
-    distant_light(
-        direction=vector(-0.55, 1.0, 0.35),
-        color=vector(0.68, 0.65, 0.58),
-    )
-
-    # Preenchimento frio e fraco para preservar detalhes nas faces em sombra.
-    distant_light(
-        direction=vector(0.65, 0.35, -0.55),
-        color=vector(0.11, 0.13, 0.16),
-    )
     return cena
+
+
+class Iluminacao:
+    """Luzes da cena e ciclo dia/noite com transição suave.
+
+    Modelo de iluminação usado (Phong, calculado pelo VPython):
+    - ambiente: luz uniforme mínima, para que nada fique totalmente preto;
+    - Sol: luz direcional quente, a mesma direção usada pelas sombras;
+    - preenchimento: luz fria e fraca do lado oposto, que suaviza contrastes;
+    - céu e reflexo da grama: aproximam a luz indireta vinda de cima e de baixo;
+    - postes: luzes pontuais (local_light) acesas apenas à noite.
+
+    O local_light do VPython não perde força com a distância; por isso cada
+    poste também ganha um halo emissivo no chão, que delimita a área iluminada.
+    """
+
+    def __init__(self, cena):
+        self.cena = cena
+        self.fator_noite = 0.0
+        self.alvo_noite = 0.0
+        cena.lights = []
+        self.sol = distant_light(direction=vector(*DIRECAO_SOL), color=color.black)
+        self.preenchimento = distant_light(
+            direction=vector(0.65, 0.35, -0.55), color=color.black)
+        self.ceu = distant_light(direction=vector(0, 1, 0), color=color.black)
+        self.reflexo_grama = distant_light(
+            direction=vector(0, -1, 0), color=color.black)
+        self.nuvens = criar_nuvens()
+        self.aplicar()
+
+    def alternar(self):
+        self.alvo_noite = 1.0 - self.alvo_noite
+
+    def atualizar(self, delta_t):
+        for nuvem in self.nuvens:
+            x = nuvem.pos.x + VELOCIDADE_NUVENS * delta_t
+            if x > LIMITE_NUVENS_X:
+                x -= 2 * LIMITE_NUVENS_X
+            nuvem.pos = vector(x, nuvem.pos.y, nuvem.pos.z)
+        if abs(self.fator_noite - self.alvo_noite) < 1e-3:
+            return
+        self.fator_noite = aproximar(
+            self.fator_noite, self.alvo_noite, TAXA_TRANSICAO_NOITE, delta_t)
+        if abs(self.fator_noite - self.alvo_noite) < 1e-3:
+            self.fator_noite = self.alvo_noite
+        self.aplicar()
+
+    def aplicar(self):
+        """Envia ao renderizador as cores correspondentes ao fator atual."""
+        p = parametros_iluminacao(self.fator_noite)
+        self.cena.background = vector(*p["fundo"])
+        self.cena.ambient = vector(*p["ambiente"])
+        self.sol.color = vector(*p["sol"])
+        self.preenchimento.color = vector(*p["preenchimento"])
+        self.ceu.color = vector(*p["ceu"])
+        self.reflexo_grama.color = vector(*p["reflexo_grama"])
+        for nuvem in self.nuvens:
+            nuvem.color = vector(*p["nuvem"])
+        for sombra in SOMBRAS:
+            sombra.definir_intensidade(p["opacidade_sombra"])
+        acesos = self.fator_noite > 0.5
+        for poste in POSTES:
+            poste["luz"].color = vector(*p["poste"])
+            poste["halo"].opacity = p["opacidade_halo"]
+            poste["halo"].visible = p["opacidade_halo"] > 0.01
+            poste["lampada"].emissive = acesos
+            poste["lampada"].color = (
+                vector(1.0, 0.86, 0.55) if acesos else vector(0.86, 0.86, 0.80))
+
+
+def criar_nuvens():
+    """Nuvens distantes formadas por elipsoides agrupados em compounds."""
+    nuvens = []
+    for x, y, z, escala in (
+        (-40, 10, -48, 1.3),
+        (-5, 12, -55, 1.6),
+        (30, 9, -45, 1.1),
+        (55, 11, 10, 1.4),
+        (-55, 10, 20, 1.2),
+        (10, 11, 52, 1.5),
+    ):
+        centro = vector(x, y, z)
+        partes = [
+            ellipsoid(pos=centro + vector(dx, dy, dz) * escala,
+                      size=vector(sx, sy, sz) * escala, color=color.white,
+                      shininess=0)
+            for dx, dy, dz, sx, sy, sz in (
+                (0, 0, 0, 9, 3.0, 5),
+                (3.5, .8, .5, 6, 3.2, 4.5),
+                (-3.8, .3, -.4, 6, 2.4, 4),
+                (1, 1.5, -.5, 5, 2.8, 4),
+            )
+        ]
+        nuvens.append(compound(partes, color=color.white))
+    return nuvens
+
+
+def criar_poste(posicao):
+    """Poste de luz: haste metálica, luminária, lâmpada e halo no chão."""
+    OBSTACULOS.append(Obstaculo(posicao.x, posicao.z, raio=.2))
+    Sombra(posicao, raio=.2, altura=3.2)
+    cor_metal = vector(0.16, 0.18, 0.20)
+    cylinder(pos=posicao, axis=vector(0, 0.25, 0), radius=0.22, color=cor_metal)
+    cylinder(pos=posicao, axis=vector(0, 3.0, 0), radius=0.07, color=cor_metal)
+    box(pos=posicao + vector(0, 3.05, 0), size=vector(0.42, 0.10, 0.42),
+        color=cor_metal)
+    box(pos=posicao + vector(0, 3.42, 0), size=vector(0.50, 0.08, 0.50),
+        color=cor_metal)
+    cylinder(pos=posicao + vector(0, 3.46, 0),
+                         axis=vector(0, 0.12, 0), radius=0.12, color=cor_metal)
+    lampada = sphere(pos=posicao + vector(0, 3.24, 0), radius=0.17,
+                     color=vector(0.86, 0.86, 0.80), shininess=0.6)
+    halo = cylinder(pos=vector(posicao.x, ALTURA_SOMBRA + 0.005, posicao.z),
+                    axis=vector(0, 0.004, 0), radius=2.4,
+                    color=vector(1.0, 0.80, 0.45), emissive=True,
+                    opacity=0, visible=False)
+    luz = local_light(pos=posicao + vector(0, 3.24, 0), color=color.black)
+    POSTES.append({"lampada": lampada, "halo": halo, "luz": luz})
+
+
+def criar_chafariz(centro):
+    """Chafariz de pedra no centro da praça, com água translúcida."""
+    OBSTACULOS.append(Obstaculo(centro.x, centro.z, raio=1.4))
+    Sombra(centro, raio=1.35, altura=1.4)
+    cor_pedra = vector(0.62, 0.60, 0.56)
+    cor_pedra_escura = vector(0.48, 0.47, 0.45)
+    cor_agua = vector(0.30, 0.66, 0.90)
+    cylinder(pos=centro, axis=vector(0, 0.45, 0), radius=1.4, color=cor_pedra)
+    cylinder(pos=centro + vector(0, 0.45, 0), axis=vector(0, 0.06, 0),
+             radius=1.48, color=cor_pedra_escura)
+    cylinder(pos=centro + vector(0, 0.46, 0), axis=vector(0, 0.02, 0),
+             radius=1.22, color=cor_agua, opacity=0.8, shininess=0.9)
+    cylinder(pos=centro, axis=vector(0, 1.15, 0), radius=0.18,
+             color=cor_pedra_escura)
+    cylinder(pos=centro + vector(0, 1.1, 0), axis=vector(0, 0.14, 0),
+             radius=0.62, color=cor_pedra)
+    cylinder(pos=centro + vector(0, 1.235, 0), axis=vector(0, 0.01, 0),
+             radius=0.52, color=cor_agua, opacity=0.8, shininess=0.9)
+    # Jato e cortina de água em volta da bacia superior.
+    cylinder(pos=centro + vector(0, 1.24, 0), axis=vector(0, 0.45, 0),
+             radius=0.06, color=vector(0.80, 0.92, 1.0), opacity=0.55)
+    sphere(pos=centro + vector(0, 1.70, 0), radius=0.11,
+           color=vector(0.80, 0.92, 1.0), opacity=0.55)
+    cylinder(pos=centro + vector(0, 0.48, 0), axis=vector(0, 0.68, 0),
+             radius=0.60, color=vector(0.70, 0.86, 1.0), opacity=0.22)
+
+
+def criar_canteiro(centro, nomes_flores):
+    """Canteiro circular de terra com uma pequena borda e flores STL."""
+    OBSTACULOS.append(Obstaculo(centro.x, centro.z, raio=.7))
+    cylinder(pos=centro + vector(0, 0.0, 0), axis=vector(0, 0.10, 0),
+             radius=0.75, color=vector(0.55, 0.53, 0.50))
+    cylinder(pos=centro + vector(0, 0.0, 0), axis=vector(0, 0.12, 0),
+             radius=0.64, color=vector(0.30, 0.20, 0.12))
+    for indice, (nome_flor, cor_petala) in enumerate(nomes_flores):
+        angulo = indice * tau / len(nomes_flores)
+        posicao = centro + vector(0.34 * cos(angulo), 0.1, 0.34 * sin(angulo))
+        criar_decoracao_stl(
+            nome_flor,
+            posicao,
+            0.58,
+            vector(0.12, 0.48, 0.16),
+            rotacao_graus=indice * 80,
+            chave_material=f"flor-{nome_flor}",
+            seletor_cor=criar_seletor_cores_faces(
+                (40, vector(0.12, 0.48, 0.16)),
+                (76, cor_petala),
+            ),
+        )
 
 
 def criar_arvore(posicao, escala=1.0):
@@ -988,6 +1242,7 @@ def criar_instancia_stl(
 def criar_arvore_stl(posicao, nome_arquivo, altura, cor_copa):
     """Carrega uma árvore Kenney e restaura cores simples de tronco e copa."""
     OBSTACULOS.append(Obstaculo(posicao.x, posicao.z, raio=.43))
+    Sombra(posicao, raio=altura * .27, altura=altura * .9)
     caminho = DIRETORIO_STL / nome_arquivo
     cor_tronco = vector(0.43, 0.25, 0.10)
     selecionar_cor = criar_seletor_cores_faces(
@@ -1013,6 +1268,7 @@ def criar_rocha_stl(posicao):
     """Adiciona ao parque um asset STL leve, com uma primitiva como reserva."""
     cor_rocha = vector(0.46, 0.49, 0.52)
     OBSTACULOS.append(Obstaculo(posicao.x, posicao.z, raio=.60))
+    Sombra(posicao, raio=.55, altura=.7)
     try:
         return criar_instancia_stl(
             CAMINHO_ROCHA_STL.name,
@@ -1047,6 +1303,9 @@ def criar_decoracao_stl(
         OBSTACULOS.append(Obstaculo(posicao.x, posicao.z, raio=.55))
     elif nome_arquivo == "log_large.stl":
         OBSTACULOS.append(Obstaculo(posicao.x, posicao.z, raio=.85))
+    if nome_arquivo in SOMBRAS_DECORACOES:
+        raio, altura_sombra = SOMBRAS_DECORACOES[nome_arquivo]
+        Sombra(posicao, raio=raio, altura=altura_sombra)
     try:
         return criar_instancia_stl(
             nome_arquivo,
@@ -1090,6 +1349,7 @@ def criar_grupo_decorativo(
 def criar_banco(posicao):
     OBSTACULOS.append(Obstaculo(posicao.x, posicao.z, meia_largura=1.35,
                                 meia_profundidade=.40))
+    Sombra(posicao, raio=1.0, altura=1.4)
     cor_madeira = vector(0.55, 0.32, 0.13)
     cor_metal = vector(0.18, 0.20, 0.22)
     box(
@@ -1336,6 +1596,8 @@ def criar_decoracoes():
 def criar_parque():
     """Cria o parque ampliado, seus caminhos e elementos naturais."""
     OBSTACULOS.clear()
+    SOMBRAS.clear()
+    POSTES.clear()
     box(
         pos=vector(0, -0.12, 0),
         size=vector(LARGURA_PARQUE, 0.24, PROFUNDIDADE_PARQUE),
@@ -1364,6 +1626,20 @@ def criar_parque():
     )
 
     criar_lago()
+    criar_chafariz(vector(0, 0.07, 1.2))
+    for x in (-2.7, 2.7):
+        criar_canteiro(vector(x, 0, 4.0), (
+            ("flower_redA.stl", vector(0.88, 0.10, 0.12)),
+            ("flower_yellowA.stl", vector(0.96, 0.78, 0.10)),
+            ("flower_purpleA.stl", vector(0.62, 0.24, 0.78)),
+        ))
+    for posicao in (
+        vector(-2.6, 0, 7.2), vector(2.6, 0, 7.2),
+        vector(-2.6, 0, -5.4), vector(2.6, 0, -5.4),
+        vector(-11.0, 0, -0.8), vector(11.2, 0, 3.3),
+        vector(-6.6, 0, -9.7), vector(6.6, 0, -9.7),
+    ):
+        criar_poste(posicao)
 
     for nome_arquivo, posicao, altura, cor_copa in (
         (
@@ -1470,7 +1746,9 @@ def criar_lixos():
     for nome, tipo, coordenadas, altura_rotulo in especificacoes:
         posicao = vector(*coordenadas)
         modelo = criar_modelo_residuo(nome, posicao)
-        lixos.append(Lixo(nome, tipo, posicao, modelo, altura_rotulo=altura_rotulo))
+        sombra = Sombra(posicao, raio=.24, altura=max(.15, altura_rotulo - .4))
+        lixos.append(Lixo(nome, tipo, posicao, modelo, altura_rotulo=altura_rotulo,
+                          sombra=sombra))
     return lixos
 
 
@@ -1480,7 +1758,8 @@ def executar():
     jogador = Jogador(vector(0, 0, 9.8))
     lixeiras = criar_lixeiras()
     lixos = criar_lixos()
-    jogo = JogoReciclagem(cena, jogador, lixos, lixeiras)
+    iluminacao = Iluminacao(cena)
+    jogo = JogoReciclagem(cena, jogador, lixos, lixeiras, iluminacao)
 
     instante_anterior = perf_counter()
 
