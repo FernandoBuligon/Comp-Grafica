@@ -15,13 +15,14 @@ def faces_revolucao(perfil, segmentos=16):
     if segmentos < 3 or len(perfil) < 2:
         raise ValueError("O perfil precisa de dois pontos e ao menos três segmentos.")
     faces = []
+    circulo = [(cos(tau * i / segmentos), sin(tau * i / segmentos))
+               for i in range(segmentos + 1)]
     for faixa, ((r0, y0), (r1, y1)) in enumerate(zip(perfil, perfil[1:])):
-        for i in range(segmentos):
-            a, b = tau * i / segmentos, tau * (i + 1) / segmentos
-            p = (r0 * cos(a), y0, r0 * sin(a))
-            q = (r1 * cos(a), y1, r1 * sin(a))
-            r = (r1 * cos(b), y1, r1 * sin(b))
-            s = (r0 * cos(b), y0, r0 * sin(b))
+        for (ca, sa), (cb, sb) in zip(circulo, circulo[1:]):
+            p = (r0 * ca, y0, r0 * sa)
+            q = (r1 * ca, y1, r1 * sa)
+            r = (r1 * cb, y1, r1 * sb)
+            s = (r0 * cb, y0, r0 * sb)
             if r1 > 0:
                 faces.append((faixa, (p, q, r)))
             if r0 > 0:
@@ -44,6 +45,13 @@ PERFIS = {
                       (.25, .46), (.25, .53), (.27, .54), (.27, .57),
                       (.22, .57), (.22, .47), (.245, .40),
                       (.245, .06), (0, .06)],
+}
+
+CORES_RESIDUOS = {
+    "garrafa plástica": (.30, .66, .88),
+    "garrafa de vidro": (.10, .43, .24),
+    "copo plástico": (.93, .43, .14),
+    "pote de vidro": (.30, .65, .52),
 }
 
 
@@ -76,19 +84,16 @@ def criar_modelo_residuo(nome, posicao):
         for x in (-.08, -.04, .01, .065):
             bloco((x, .29, .341), (.015, .13, .004), (.22, .18, .13))
     elif nome in PERFIS:
-        cores = {
-            "garrafa plástica": (.30, .66, .88),
-            "garrafa de vidro": (.10, .43, .24),
-            "copo plástico": (.93, .43, .14),
-            "pote de vidro": (.30, .65, .52),
-        }
+        cor_base = vector(*CORES_RESIDUOS[nome])
+        cor_rotulo = vector(.92, .94, .85)
+        cor_tampa = vector(.10, .22, .58)
         for faixa, face in faces_revolucao(PERFIS[nome]):
-            cor = vector(*cores[nome])
+            cor = cor_base
             if nome == "garrafa plástica":
                 if faixa == 4:
-                    cor = vector(.92, .94, .85)  # Rótulo em volta do corpo.
+                    cor = cor_rotulo  # Rótulo em volta do corpo.
                 elif faixa >= 9:
-                    cor = vector(.10, .22, .58)  # Tampa e gargalo.
+                    cor = cor_tampa  # Tampa e gargalo.
             pontos = [posicao + vector(*p) for p in face]
             normal = (pontos[1] - pontos[0]).cross(pontos[2] - pontos[0]).norm()
             partes.append(triangle(vs=[vertex(pos=p, normal=normal, color=cor)

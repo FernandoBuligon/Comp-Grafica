@@ -34,8 +34,10 @@
         evento.stopImmediatePropagation();
         if (!evento.repeat) enviar(alternar ? "alternar" : reiniciar ? "reiniciar" : tecla);
     }, true);
-    window.addEventListener("estado-menu", evento => {
-        const {aberto, secao} = evento.detail;
+    // Só o conteúdo deste widget muda; diálogo e ouvintes permanecem instalados.
+    const ponte = document.getElementById("estado-menu").parentElement;
+    function sincronizar() {
+        const {aberto, secao} = JSON.parse(ponte.textContent);
         if (aberto && !menu.open) menu.showModal();
         if (!aberto && menu.open) menu.close();
         abrir.hidden = aberto;
@@ -45,6 +47,10 @@
         menu.querySelectorAll("nav button").forEach(botao => {
             botao.setAttribute("aria-pressed", String(botao.dataset.acao === secao));
         });
+    }
+    new MutationObserver(sincronizar).observe(ponte, {
+        childList: true, subtree: true, characterData: true
     });
+    sincronizar();
     abrir.disabled = false;
 })();

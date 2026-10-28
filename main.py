@@ -28,6 +28,7 @@ try:
         rate,
         sphere,
         vector,
+        wtext,
     )
 except ModuleNotFoundError as erro:
     if erro.name == "vpython":
@@ -207,6 +208,9 @@ class Sombra:
         self.altura = altura
         self.intensidade = parametros_iluminacao()["opacidade_sombra"]
         self.fator_elevacao = 1.0
+        self.ultima_projecao = None
+        (sx, sz), _ = direcao_sombra()
+        self.eixo = vector(sx, 0, sz)
         self.elipse = ellipsoid(
             pos=vector(posicao.x, ALTURA_SOMBRA, posicao.z),
             size=vector(1, 0.01, 1),
@@ -219,11 +223,15 @@ class Sombra:
 
     def posicionar(self, base, elevacao=0.0):
         """Recalcula a projeção para um objeto com base em ``base``."""
+        elevacao = max(0.0, elevacao)
+        parametros = (base.x, base.z, elevacao, self.raio, self.altura)
+        if parametros == self.ultima_projecao:
+            return
+        self.ultima_projecao = parametros
         dx, dz, comprimento, largura, fator = geometria_sombra(
-            self.raio, self.altura, max(0.0, elevacao))
-        (sx, sz), _ = direcao_sombra()
+            self.raio, self.altura, elevacao)
         self.elipse.pos = vector(base.x + dx, ALTURA_SOMBRA, base.z + dz)
-        self.elipse.axis = vector(sx, 0, sz) * comprimento
+        self.elipse.axis = self.eixo * comprimento
         self.elipse.size = vector(comprimento, 0.01, largura)
         if fator != self.fator_elevacao:
             self.fator_elevacao = fator
@@ -340,13 +348,14 @@ class Jogador:
 
     def aplicar_pose(self):
         """Posiciona cada peça: ``axis`` e ``up`` formam sua base girada."""
-        frente, cima, _ = self._eixos_visuais()
+        frente, cima, direita = self._eixos_visuais()
         for nome, segmento in self.animador.pose.segmentos.items():
             peca = self.partes.get(nome)
             if peca is None:
                 continue
             c, s = cos(segmento.theta), sin(segmento.theta)
-            peca.pos = self.ponto_local(segmento.f, segmento.u, segmento.lado)
+            peca.pos = (self.pos + frente * segmento.f + cima * segmento.u
+                        + direita * segmento.lado)
             peca.axis = frente * c + cima * s
             peca.up = cima * c - frente * s
         self.sombra.posicionar(self.pos)
@@ -475,7 +484,7 @@ class Lixeira:
             box(pos=dobradica + vector(0, .11, .66), size=vector(.46, .06, .10),
                 color=cor * .5, shininess=.2),
         ], origin=dobradica, pos=dobradica)
-        self.abertura = 0.0
+        self.reiniciar_tampa()
         label(
             pos=self.pos + vector(0, 2.25, 0),
             text=NOMES_TIPOS[self.tipo].upper(),
@@ -491,10 +500,22 @@ class Lixeira:
 
     def atualizar_tampa(self, delta_t, aberta):
         """Abre a tampa suavemente quando o jogador chega com um resíduo."""
-        self.abertura = aproximar(self.abertura, float(aberta), 7, delta_t)
+        alvo = float(aberta)
+        abertura = aproximar(self.abertura, alvo, 7, delta_t)
+        if abs(abertura - alvo) < 1e-4:
+            abertura = alvo
+        if abertura == self.abertura:
+            return
+        self.abertura = abertura
         angulo = radians(ANGULO_TAMPA_GRAUS) * suavizar(self.abertura)
         self.tampa.axis = vector(1, 0, 0)
         self.tampa.up = vector(0, cos(angulo), -sin(angulo))
+
+    def reiniciar_tampa(self):
+        """Fecha imediatamente, sem depender da interpolação de outro quadro."""
+        self.abertura = 0.0
+        self.tampa.axis = vector(1, 0, 0)
+        self.tampa.up = vector(0, 1, 0)
 
 
 class JogoReciclagem:
@@ -504,6 +525,7 @@ class JogoReciclagem:
         self.cena = cena
         self.iluminacao = iluminacao
         self.acoes_menu = deque()
+        self.menu_html_ativo = False
         self.jogador = jogador
         self.lixos = lixos
         self.lixeiras = lixeiras
@@ -523,6 +545,9 @@ class JogoReciclagem:
         self.ultimo_estado_hud = None
         self.r_estava_pressionado = False
         self.angulo_camera = jogador.angulo
+        # Widget persistente: atualizar text não acrescenta HTML à legenda.
+        self.estado_menu = wtext(
+            text='<span id="estado-menu" hidden>{"aberto":false,"secao":"1"}</span>')
 
         self.rotulo_hud = label(
             pos=vector(16, cena.height - 45, 0),
@@ -552,17 +577,19 @@ class JogoReciclagem:
         """Recebe ações dos botões HTML pela conexão de eventos do VPython."""
         chave = evento.key
         if chave.startswith("menu:"):
+            # O primeiro comando recebido confirma a captura dos atalhos no JS.
+            self.menu_html_ativo = True
             self.acoes_menu.append(chave[5:])
 
     def atualizar_texto_menu(self):
         estado = json.dumps({"aberto": self.menu_aberto,
                              "secao": self.secao_menu or "1"})
-        self.cena.append_to_caption(
-            '<script>window.dispatchEvent(new CustomEvent("estado-menu", '
-            f'{{detail:{estado}}}));</script>')
+        self.estado_menu.text = f'<span id="estado-menu" hidden>{estado}</span>'
 
     def atualizar_entrada_menu(self, teclas):
-        """Trata atalhos do menu usando uma ação por toque."""
+        """Fallback sem a ponte HTML; no navegador o JS captura os atalhos."""
+        if self.menu_html_ativo:
+            return
         atalho_pressionado = bool({"m", "esc", "escape"} & teclas)
         if atalho_pressionado and not self.atalho_menu_estava_pressionado:
             self.alternar_menu()
@@ -593,6 +620,8 @@ class JogoReciclagem:
         self.voos = []
         self.pontuacao = 0
         self.encerrado = False
+        for lixeira in self.lixeiras:
+            lixeira.reiniciar_tampa()
         self.menu_aberto = False
         self.secao_menu = None
         self.atualizar_texto_menu()
@@ -626,14 +655,15 @@ class JogoReciclagem:
             self.e_estava_pressionado = "e" in teclas
             self.atalho_menu_estava_pressionado = bool(teclas & {"m", "esc", "escape"})
             return
-        if self.encerrado:
-            # O último arremesso termina mesmo depois da vitória.
-            self.atualizar_animacoes(delta_t)
-            return
         self.atualizar_entrada_menu(teclas)
         if self.menu_aberto:
             self.e_estava_pressionado = "e" in teclas
             self.atualizar_interface()
+            return
+
+        if self.encerrado:
+            # O último arremesso termina depois da vitória, respeitando a pausa.
+            self.atualizar_animacoes(delta_t)
             return
 
         posicao_anterior = self.jogador.pos
@@ -669,7 +699,7 @@ class JogoReciclagem:
         self.atualizar_lixo_carregado()
         self.atualizar_voos(delta_t)
         for lixeira in self.lixeiras:
-            perto = mag(self.jogador.pos - lixeira.pos) <= DISTANCIA_ABRIR_TAMPA
+            perto = carregando and mag(self.jogador.pos - lixeira.pos) <= DISTANCIA_ABRIR_TAMPA
             ocupada = any(voo["lixeira"] is lixeira for voo in self.voos)
             lixeira.atualizar_tampa(delta_t, (carregando and perto) or ocupada)
 
@@ -762,29 +792,24 @@ class JogoReciclagem:
         self.rotulo_vitoria.border = 10 if compacto else 16
 
     def verificar_lixo_proximo(self):
-        candidatos = [
-            lixo
-            for lixo in self.lixos
-            if lixo.ativo
-            and lixo is not self.lixo_carregado
-            and mag(self.jogador.pos - lixo.pos) <= DISTANCIA_LIXO
-        ]
-        if not candidatos:
-            return None
-        return min(candidatos, key=lambda lixo: mag(self.jogador.pos - lixo.pos))
+        proximo = None
+        menor_distancia = DISTANCIA_LIXO ** 2
+        for lixo in self.lixos:
+            if not lixo.ativo or lixo is self.lixo_carregado:
+                continue
+            distancia = (self.jogador.pos - lixo.pos).mag2
+            if distancia < menor_distancia or (proximo is None and distancia <= menor_distancia):
+                proximo, menor_distancia = lixo, distancia
+        return proximo
 
     def verificar_lixeira_proxima(self):
-        candidatos = [
-            lixeira
-            for lixeira in self.lixeiras
-            if mag(self.jogador.pos - lixeira.pos) <= DISTANCIA_LIXEIRA
-        ]
-        if not candidatos:
-            return None
-        return min(
-            candidatos,
-            key=lambda lixeira: mag(self.jogador.pos - lixeira.pos),
-        )
+        proxima = None
+        menor_distancia = DISTANCIA_LIXEIRA ** 2
+        for lixeira in self.lixeiras:
+            distancia = (self.jogador.pos - lixeira.pos).mag2
+            if distancia < menor_distancia or (proxima is None and distancia <= menor_distancia):
+                proxima, menor_distancia = lixeira, distancia
+        return proxima
 
     def interagir(self):
         if self.lixo_carregado is None:
@@ -807,6 +832,8 @@ class JogoReciclagem:
         )
 
     def descartar_lixo(self):
+        if self.jogador.animador.fixacao_item() < 1.0:
+            return
         lixeira = self.verificar_lixeira_proxima()
         if lixeira is None:
             self.mensagem = "Nenhuma lixeira próxima. Continue procurando."
@@ -853,14 +880,15 @@ class JogoReciclagem:
             if self.lixo_carregado is not None
             else "nenhum"
         )
-        estado = (self.pontuacao, self.residuos_restantes(), carregando,
+        restantes = self.residuos_restantes()
+        estado = (self.pontuacao, restantes, carregando,
                   self.mensagem, self.cena.width)
         if estado == self.ultimo_estado_hud:
             return
         self.ultimo_estado_hud = estado
         texto_hud = formatar_hud_interface(
             self.pontuacao,
-            self.residuos_restantes(),
+            restantes,
             carregando,
             self.mensagem,
             self.cena.width,

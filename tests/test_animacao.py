@@ -1,5 +1,5 @@
 """Testa a animação procedural sem depender do VPython."""
-from math import pi
+from math import exp, pi
 import unittest
 
 import animacao as an
@@ -48,7 +48,27 @@ class Animacao(unittest.TestCase):
         self.assertGreater(animador.pose.mao[1], 1.1)  # na altura do peito
 
     def test_angulo_pelo_menor_arco(self):
-        self.assertAlmostEqual(an.aproximar_angulo(3.0, -3.0, 1, 1), 3.0 + (2 * pi - 6))
+        self.assertAlmostEqual(an.aproximar_angulo(3.0, -3.0, 1, 1),
+                               3.0 + (2 * pi - 6) * (1 - exp(-1)))
+
+    def test_interpolacao_independe_da_subdivisao_temporal(self):
+        for fps in (30, 60, 120):
+            with self.subTest(fps=fps):
+                valor, angulo = 0.0, 3.0
+                for _ in range(fps):
+                    valor = an.aproximar(valor, 1, 5, 1 / fps)
+                    angulo = an.aproximar_angulo(angulo, -3, 5, 1 / fps)
+                self.assertAlmostEqual(valor, 1 - exp(-5), places=12)
+                self.assertAlmostEqual(angulo, an.aproximar_angulo(3, -3, 5, 1), places=12)
+
+    def test_interpolacao_sem_salto_nos_limites_temporais(self):
+        for dt in (0, -.01):
+            self.assertEqual(an.aproximar(2, 10, 7, dt), 2)
+            self.assertEqual(an.aproximar_angulo(3, -3, 7, dt), 3)
+        for dt in (.001, .05, 1, 1000):
+            valor = an.aproximar(2, 10, 7, dt)
+            self.assertGreaterEqual(valor, 2)
+            self.assertLessEqual(valor, 10)
 
 
 if __name__ == '__main__':

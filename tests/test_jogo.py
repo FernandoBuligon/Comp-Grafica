@@ -18,7 +18,21 @@ class RegrasJogo(unittest.TestCase):
         self.rotulos = patch.object(main, 'label', side_effect=lambda **kw: SimpleNamespace(**kw))
         self.rotulos.start()
         self.addCleanup(self.rotulos.stop)
-        main.OBSTACULOS.clear()
+        texto_menu = patch.object(main, 'wtext', side_effect=lambda **kw: SimpleNamespace(**kw))
+        texto_menu.start()
+        self.addCleanup(texto_menu.stop)
+        # Restaura os registros inclusive quando o teste falha.
+        for nome in ('OBSTACULOS', 'SOMBRAS', 'PROTOTIPOS_STL'):
+            registro = getattr(main, nome)
+            anterior = registro.copy()
+            registro.clear()
+            def restaurar(registro=registro, anterior=anterior):
+                registro.clear()
+                if isinstance(registro, dict):
+                    registro.update(anterior)
+                else:
+                    registro.extend(anterior)
+            self.addCleanup(restaurar)
         cena = SimpleNamespace(width=960, height=600, camera=SimpleNamespace(), bind=lambda *a: None, append_to_caption=lambda *a: None)
         with ExitStack() as pilha:
             for nome in ('box', 'cylinder', 'sphere', 'ellipsoid', 'compound'):
@@ -26,7 +40,8 @@ class RegrasJogo(unittest.TestCase):
             self.jogador = main.Jogador(vector(0, 0, 0))
         lixo = main.Lixo('papel', 'papel', vector(0, 0, 0), SimpleNamespace(visible=True))
         self.lixeira = SimpleNamespace(tipo='vidro', pos=vector(0, 0, 0),
-                                       atualizar_tampa=lambda *a: None)
+                                       atualizar_tampa=lambda *a: None,
+                                       reiniciar_tampa=lambda: None)
         self.jogo = main.JogoReciclagem(cena, self.jogador, [lixo], [self.lixeira])
 
     def test_coleta_erro_acerto_e_reinicio(self):
@@ -35,6 +50,9 @@ class RegrasJogo(unittest.TestCase):
         self.assertIs(jogo.lixo_carregado, jogo.lixos[0])
         jogo.atualizar({'e'}, .016)
         self.assertEqual(jogo.pontuacao, 0)
+        # Conclui a coleta antes de testar as regras de descarte.
+        for _ in range(30):
+            jogo.atualizar(set(), .016)
         jogo.atualizar(set(), .016)
         jogo.atualizar({'e'}, .016)
         self.assertEqual(jogo.pontuacao, -25)
@@ -64,6 +82,185 @@ class RegrasJogo(unittest.TestCase):
             self.jogo.atualizar(set(), .016)
             camera.assert_not_called()
             hud.assert_not_called()
+
+    def test_vitoria_menu_pausa_voo_e_nuvens_continuam(self):
+        jogo = self.jogo
+        jogo.atualizar({'e'}, .016)
+        for _ in range(30):
+            jogo.atualizar(set(), .016)
+        self.lixeira.tipo = 'papel'
+        jogo.atualizar({'e'}, .016)
+        self.assertTrue(jogo.encerrado)
+        self.assertEqual(len(jogo.voos), 1)
+        chamadas = []
+        jogo.iluminacao = SimpleNamespace(atualizar=chamadas.append)
+        t = jogo.voos[0]['t']
+        tempo_pose = self.jogador.animador.tempo
+        jogo.atualizar({'m'}, .016)
+        self.assertTrue(jogo.menu_aberto)
+        jogo.atualizar({'m', '2'}, .016)
+        self.assertTrue(jogo.menu_aberto)  # segurar não alterna novamente
+        self.assertEqual(jogo.secao_menu, '2')
+        self.assertEqual(jogo.voos[0]['t'], t)
+        self.assertEqual(self.jogador.animador.tempo, tempo_pose)
+        self.assertEqual(chamadas, [.016, .016])
+        jogo.atualizar(set(), .016)
+        jogo.atualizar({'escape'}, main.DURACAO_VOO_RESIDUO)
+        self.assertFalse(jogo.menu_aberto)
+        self.assertEqual(jogo.voos, [])
+        self.assertFalse(jogo.lixos[0].modelo.visible)
+        jogo.receber_acao_menu(SimpleNamespace(key='menu:alternar'))
+        jogo.atualizar(set(), .016)
+        self.assertTrue(jogo.menu_aberto)
+        jogo.receber_acao_menu(SimpleNamespace(key='menu:reiniciar'))
+        jogo.atualizar(set(), .016)
+        self.assertFalse(jogo.encerrado)
+        self.assertFalse(jogo.menu_aberto)
+        self.assertTrue(jogo.lixos[0].ativo)
+        self.assertEqual(jogo.pontuacao, 0)
+
+    def test_reinicio_fecha_tampa_imediatamente_em_estados_transitorios(self):
+        tampa = main.Lixeira.__new__(main.Lixeira)
+        tampa.pos = vector(0, 0, 0)
+        tampa.tipo = 'papel'
+        tampa.tampa = SimpleNamespace()
+        self.jogo.lixeiras = [tampa]
+        for abertura, em_voo in ((.1, False), (.7, False), (1.0, True)):
+            with self.subTest(abertura=abertura, em_voo=em_voo):
+                tampa.abertura = abertura
+                tampa.tampa.up = vector(0, .5, -.5)
+                if em_voo:
+                    self.jogo.voos = [{'lixeira': tampa}]
+                self.jogo.reiniciar()
+                self.assertEqual(tampa.abertura, 0)
+                self.assertEqual(tampa.tampa.axis, vector(1, 0, 0))
+                self.assertEqual(tampa.tampa.up, vector(0, 1, 0))
+                self.assertEqual(self.jogo.voos, [])
+
+    def test_ponte_html_e_fallback_nao_processam_mesmo_atalho(self):
+        jogo = self.jogo
+        jogo.receber_acao_menu(SimpleNamespace(key='menu:alternar'))
+        jogo.atualizar({'m'}, .016)
+        self.assertTrue(jogo.menu_aberto)
+        jogo.atualizar({'m'}, .016)
+        self.assertTrue(jogo.menu_aberto)
+        jogo.receber_acao_menu(SimpleNamespace(key='menu:2'))
+        jogo.atualizar({'3'}, .016)
+        self.assertEqual(jogo.secao_menu, '2')
+        jogo.receber_acao_menu(SimpleNamespace(key='menu:continuar'))
+        jogo.atualizar(set(), .016)
+        self.assertFalse(jogo.menu_aberto)
+
+    def test_sincronizacao_menu_nao_acrescenta_html(self):
+        import json
+        with patch.object(self.jogo.cena, 'append_to_caption') as acrescentar:
+            for _ in range(200):
+                self.jogo.alternar_menu()
+                self.assertLess(len(self.jogo.estado_menu.text), 100)
+            acrescentar.assert_not_called()
+        texto = self.jogo.estado_menu.text.split('>', 1)[1].split('<', 1)[0]
+        self.assertEqual(json.loads(texto), {'aberto': False, 'secao': '1'})
+
+    def test_sombra_estatica_nao_reprojeta_e_elevacao_invalida_cache(self):
+        sombra = self.jogador.sombra
+        with patch.object(main, 'geometria_sombra', wraps=main.geometria_sombra) as geometria:
+            self.jogador.animar(.016, False)
+            self.jogador.animar(.016, False)
+            geometria.assert_not_called()
+            self.jogador.mover(vector(0, 0, -.1))
+            self.jogador.animar(.016, False)
+            self.assertEqual(geometria.call_count, 1)
+            sombra.posicionar(self.jogador.pos, elevacao=1)
+            self.assertEqual(geometria.call_count, 2)
+            self.assertLess(sombra.elipse.opacity, sombra.intensidade)
+
+    def test_pose_reutiliza_base_e_preserva_posicoes_dos_segmentos(self):
+        with patch.object(self.jogador, '_eixos_visuais', wraps=self.jogador._eixos_visuais) as base:
+            self.jogador.aplicar_pose()
+            self.assertEqual(base.call_count, 1)
+        for nome, segmento in self.jogador.animador.pose.segmentos.items():
+            self.assertEqual(self.jogador.partes[nome].pos,
+                             self.jogador.ponto_local(segmento.f, segmento.u, segmento.lado))
+
+    def test_tampa_estabiliza_e_preserva_abertura_durante_voo(self):
+        lixeira = main.Lixeira.__new__(main.Lixeira)
+        lixeira.pos = vector(0, 0, 0)
+        lixeira.tampa = SimpleNamespace()
+        lixeira.reiniciar_tampa()
+        for _ in range(150):
+            lixeira.atualizar_tampa(.016, True)
+        self.assertEqual(lixeira.abertura, 1)
+        up_aberta = lixeira.tampa.up
+        lixeira.atualizar_tampa(.016, True)
+        self.assertIs(lixeira.tampa.up, up_aberta)
+        self.jogo.lixeiras = [lixeira]
+        self.jogo.voos = [{'lixeira': lixeira, 'lixo': self.jogo.lixos[0],
+                          'inicio': vector(0, 0, 0), 'fim': vector(0, 1, 0), 't': 0}]
+        self.jogo.atualizar_animacoes(.016)
+        self.assertEqual(lixeira.abertura, 1)
+        self.jogo.voos.clear()
+        for _ in range(150):
+            self.jogo.atualizar_animacoes(.016)
+        self.assertEqual(lixeira.abertura, 0)
+        up_fechada = lixeira.tampa.up
+        self.jogo.atualizar_animacoes(.016)
+        self.assertIs(lixeira.tampa.up, up_fechada)
+
+    def test_busca_preserva_limite_empate_inativos_e_carregado(self):
+        jogo = self.jogo
+        a = jogo.lixos[0]
+        a.definir_posicao(vector(main.DISTANCIA_LIXO, 0, 0))
+        b = SimpleNamespace(pos=vector(-main.DISTANCIA_LIXO, 0, 0), ativo=True)
+        jogo.lixos = [a, b]
+        self.assertIs(jogo.verificar_lixo_proximo(), a)
+        jogo.lixo_carregado = a
+        self.assertIs(jogo.verificar_lixo_proximo(), b)
+        b.ativo = False
+        self.assertIsNone(jogo.verificar_lixo_proximo())
+        self.lixeira.pos = vector(main.DISTANCIA_LIXEIRA, 0, 0)
+        outra = SimpleNamespace(pos=vector(-main.DISTANCIA_LIXEIRA, 0, 0))
+        jogo.lixeiras.append(outra)
+        self.assertIs(jogo.verificar_lixeira_proxima(), self.lixeira)
+        self.lixeira.pos.x += .001
+        self.assertIs(jogo.verificar_lixeira_proxima(), outra)
+
+    def test_registros_restaurados_mesmo_se_um_teste_falhar(self):
+        anteriores = {nome: getattr(main, nome).copy()
+                      for nome in ('SOMBRAS', 'OBSTACULOS', 'PROTOTIPOS_STL')}
+        class FalhaIsolada(RegrasJogo):
+            def runTest(self):
+                main.SOMBRAS.clear()
+                main.OBSTACULOS.append(object())
+                main.PROTOTIPOS_STL['temporario'] = object()
+                self.fail('falha deliberada para conferir cleanup')
+        resultado = unittest.TestResult()
+        FalhaIsolada().run(resultado)
+        self.assertEqual(len(resultado.failures), 1)
+        self.assertEqual(resultado.errors, [])
+        for nome, anterior in anteriores.items():
+            self.assertEqual(getattr(main, nome), anterior)
+
+    def test_interacao_rapida_aguarda_item_nas_maos_sem_bloquear_movimento(self):
+        jogo = self.jogo
+        self.lixeira.tipo = 'papel'
+        jogo.atualizar({'e'}, .016)
+        jogo.atualizar(set(), .016)
+        jogo.atualizar({'e', 'w', 'd'}, .016)
+        self.assertEqual(jogo.pontuacao, 0)
+        self.assertTrue(jogo.lixos[0].ativo)
+        self.assertEqual(jogo.voos, [])
+        self.assertNotEqual(self.jogador.pos, vector(0, 0, 0))
+        self.assertNotEqual(self.jogador.angulo, main.pi)
+        for _ in range(40):
+            jogo.atualizar({'e'}, .016)
+        self.assertEqual(jogo.voos, [])  # E mantido não cria nova interação
+        jogo.atualizar(set(), .016)
+        inicio = vector(jogo.lixos[0].pos)
+        jogo.atualizar({'e'}, .016)
+        self.assertEqual(jogo.pontuacao, main.PONTOS_ACERTO)
+        self.assertEqual(len(jogo.voos), 1)
+        self.assertEqual(jogo.voos[0]['inicio'], inicio)
+        self.assertGreater(inicio.y, .8)
 
     def test_item_vai_do_chao_para_as_maos(self):
         jogo = self.jogo

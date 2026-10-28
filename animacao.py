@@ -11,7 +11,7 @@ e o joelho é calculado. Os braços usam cinemática direta (ângulos de ombro e
 cotovelo). O módulo só devolve números; quem desenha é ``main.Jogador``.
 """
 from dataclasses import dataclass, field
-from math import acos, atan2, cos, pi, sin, tau
+from math import acos, atan2, cos, expm1, pi, sin, tau
 
 # Medidas do esqueleto, em metros, no referencial local do personagem.
 ALTURA_QUADRIL = .92
@@ -56,13 +56,14 @@ def suavizar(t):
 
 def aproximar(atual, alvo, taxa, delta_t):
     """Aproximação exponencial, estável para qualquer delta_t."""
-    return atual + (alvo - atual) * limitar(taxa * delta_t)
+    fator = -expm1(-max(0.0, taxa * delta_t))
+    return atual + (alvo - atual) * fator
 
 
 def aproximar_angulo(atual, alvo, taxa, delta_t):
     """Gira pelo menor arco, evitando a volta completa entre -pi e pi."""
     diferenca = (alvo - atual + pi) % tau - pi
-    return atual + diferenca * limitar(taxa * delta_t)
+    return aproximar(atual, atual + diferenca, taxa, delta_t)
 
 
 def ponta(origem, comprimento, theta):
