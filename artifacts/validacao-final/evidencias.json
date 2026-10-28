@@ -1,0 +1,35 @@
+{
+  "verificacoes": [
+    "Cenario real inicializado com modelos e seis objetivos",
+    "Movimento real pelo teclado e retorno pelo R",
+    "Clique abre menu; pose congela e nuvens continuam",
+    "Secoes 1/2/3, foco contido e Esc retoma",
+    "M nao alterna duas vezes por repeticao e modificador e ignorado",
+    "Redimensionamento movel e menu preservam DOM",
+    "Seis coletas e descartes reais ate vitoria",
+    "Menu apos vitoria abre por M, pausa e reinicia por botao",
+    "Asset ausente e invalido usam fallback real",
+    "Legenda permanece constante em repetidas mudancas de estado"
+  ],
+  "erros": [],
+  "data": "2026-10-28",
+  "ambiente": "Linux, Python 3.12, VPython 7.6.5, Chrome headless com WebGL via SwiftShader",
+  "viewports": [
+    "1440x900",
+    "390x844"
+  ],
+  "metodo": "Jogo real, DOM e eventos de teclado via Chrome DevTools Protocol. Instrumentacao temporaria externa ao projeto observa estado e reposiciona o jogador entre objetivos; coleta, descarte e vitoria usam os metodos originais e teclas E.",
+  "legenda_caracteres": 10408,
+  "preservacao_dom": "Identidade do dialogo preservada; um unico elemento #estado-menu; 10 ciclos de abrir/navegar/continuar sem aumento da legenda.",
+  "capturas": [
+    "menu-movel.png",
+    "vitoria-menu.png",
+    "cenario-final.png"
+  ],
+  "limites": [
+    "Nao e uma partida inteira percorrida a pe: houve reposicionamento entre objetivos.",
+    "Fallback foi acionado em cena ja inicializada, com caminhos de teste ausente e invalido, sem alterar os assets originais.",
+    "Nao mede FPS representativo de GPU fisica nem homologa outros navegadores ou sistemas.",
+    "Congelamento do ultimo voo e interacao rapida durante coleta foram verificados nos testes Python, nao capturados em video."
+  ]
+}
