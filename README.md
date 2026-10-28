@@ -2,6 +2,8 @@
 
 MVP acadêmico de um jogo educativo sobre coleta seletiva, feito somente com Python e VPython. O jogador percorre um parque ampliado e arborizado, carrega um resíduo por vez e precisa levá-lo à lixeira de papel, plástico ou vidro.
 
+O desenvolvimento funcional está encerrado. O plano de trabalho é um registro histórico; os itens descartados não fazem parte da entrega.
+
 ## Estrutura
 
 ```text
@@ -9,11 +11,15 @@ Comp-Grafica/
 ├── carregador_stl.py
 ├── kenney_nature-kit/
 ├── main.py
+├── janela.js
+├── menu.html
+├── menu.js
 ├── modelos_residuos.py
 ├── colisoes.py
 ├── iluminacao.py
 ├── animacao.py
 ├── requirements.txt
+├── validar_entrega.py
 ├── tests/
 └── README.md
 ```
@@ -109,7 +115,7 @@ As lixeiras possuem paredes, fundo, borda aberta e alças. Os STL naturais prese
 
 Há colisões aproximadas com troncos das árvores, bancos, lago, lixeiras, cercas, rochas maiores, tocos e troncos caídos. Flores e vegetação pequena continuam atravessáveis. O movimento é subdividido e permite deslizar pelas bordas. As colisões são aproximações geométricas, não testes contra cada triângulo.
 
-Pressione **R** durante a partida ou após a vitória para restaurar jogador, resíduos e pontuação. O cenário e os modelos são reutilizados. A câmera e o objeto carregado são atualizados quando o jogador se move; a formatação do HUD só ocorre quando seu estado muda.
+Pressione **R** durante a partida ou após a vitória para restaurar jogador, resíduos, pontuação e tampas fechadas. O cenário e os modelos são reutilizados. A câmera acompanha deslocamento e giro; o objeto carregado acompanha as mãos durante a animação. A formatação do HUD só ocorre quando seu estado muda.
 
 ## Personagem articulado e animações
 
@@ -117,10 +123,10 @@ O personagem deixou de ser um único `compound`: cada membro (tronco com cabeça
 
 - **Caminhada:** a fase do passo avança proporcionalmente à distância realmente percorrida, então o personagem para de mexer as pernas ao encostar em um obstáculo. Os braços balançam em oposição às pernas.
 - **Cinemática inversa:** as pernas recebem um alvo para o tornozelo e o joelho é calculado pela lei dos cossenos. Assim os pés continuam no chão quando o quadril abaixa.
-- **Coleta:** ao pressionar **E**, o personagem se agacha, inclina o tronco, estende os braços até o item, que é levado do chão às mãos e transportado na altura do peito.
+- **Coleta:** ao pressionar **E**, o personagem se agacha, inclina o tronco, estende os braços até o item, que é levado do chão às mãos e transportado na altura do peito. Uma nova tentativa de descarte é aceita depois de o item chegar às mãos; caminhar e girar continuam permitidos durante a coleta.
 - **Descarte:** num acerto, os braços fazem um arremesso e o resíduo segue um arco parabólico até a lixeira. A regra e a pontuação mudam na hora; só o modelo some ao fim do voo.
 - **Lixeiras:** a tampa gira na dobradiça traseira e abre quando o jogador chega com um resíduo.
-- **Suavização:** o giro do corpo e as transições entre poses usam aproximação exponencial dependente de `delta_t`, estável em qualquer taxa de quadros.
+- **Suavização:** o giro do corpo e as transições entre poses usam aproximação exponencial com fator `1 - exp(-taxa * delta_t)`, equivalente para subdivisões do mesmo intervalo com alvo fixo. O giro angular segue o menor arco.
 
 ## Controles e regras
 
@@ -144,15 +150,17 @@ O controle é em terceira pessoa: a câmera fica atrás do jogador e gira, com u
 
 O menu de pausa também pode ser aberto pelo botão **Menu**. As seções Como jogar, Regras e Sobre aceitam cliques ou os atalhos 1, 2 e 3. Os arquivos `menu.html` e `menu.js` devem acompanhar `main.py`. A iluminação é sempre diurna.
 
+O menu funciona também após a vitória. Durante a pausa, personagem, resíduos em voo e tampas ficam congelados; as nuvens continuam em movimento. Ao retomar, o último arremesso pode terminar mesmo com a vitória já registrada. Os atalhos do menu são capturados pelo JavaScript e enviados ao Python; a consulta Python desses atalhos é um fallback antes do primeiro comando HTML recebido. O estado confirmado retorna por um widget de texto persistente, preservando o diálogo e seus ouvintes sem acumular scripts na legenda.
+
 ## Principais decisões do MVP
 
 - **Entrada contínua:** `keysdown()` é consultado em cada quadro, permitindo manter `W`, `A`, `S` ou `D` pressionado.
 - **Uma interação por toque:** a variável `e_estava_pressionado` detecta a transição da tecla `E`; manter a tecla pressionada não repete descartes nem penalidades.
-- **Movimento previsível:** a direção diagonal é normalizada e a velocidade usa `delta_t`.
-- **Câmera simples:** a câmera tem inclinação fixa e translada junto com o jogador. Assim, os controles continuam coerentes com a tela.
+- **Movimento previsível:** W/S deslocam para frente/ré e A/D giram o jogador; as duas ações podem ser combinadas. A velocidade usa `delta_t`.
+- **Câmera em terceira pessoa:** acompanha a posição imediatamente e gira com atraso suave, mantendo altura e distância definidas.
 - **Parque ampliado:** o terreno mede 34 × 26 unidades e possui caminho principal, ramificação transversal, praça, lago e áreas verdes periféricas.
 - **Instâncias eficientes:** árvores, cercas, plantas e outros decorativos repetidos reutilizam protótipos STL com `clone()`.
-- **Interação por proximidade:** `mag(jogador.pos - objeto.pos)` mede a distância para coletar e descartar.
+- **Interação por proximidade:** uma passagem seleciona o objeto mais próximo dentro do alcance, comparando distâncias ao quadrado.
 - **Cenário determinístico:** as posições são fixas, o que torna a demonstração em sala reproduzível.
 - **Identificação acessível:** as lixeiras usam as cores usuais da coleta seletiva, mas também exibem `PAPEL`, `PLÁSTICO` e `VIDRO` por texto.
 
@@ -165,15 +173,15 @@ O menu de pausa também pode ser aberto pelo botão **Menu**. As seções Como j
 | Sistema de coordenadas | X representa esquerda/direita, Y altura e Z frente/trás |
 | Posição e vetores | todos os objetos usam `pos=vector(x, y, z)` |
 | Translação | `Jogador.mover` soma um vetor de deslocamento à posição |
-| Rotação/orientação | `self.modelo.axis = self.direcao` orienta o personagem |
+| Rotação/orientação | `Jogador.aplicar_pose` define `axis` e `up` de cada peça articulada |
 | Escala | `size`, `radius`, `axis` e o parâmetro `escala` das árvores alteram dimensões |
 | Câmera e perspectiva | `camera.pos`, `camera.axis` e `fov` definem o enquadramento |
 | Cores e transparência | vetores RGB, `color` e `opacity` diferenciam materiais e categorias |
-| Iluminação | uma `distant_light` principal vem de cima e outra suaviza as áreas em sombra |
-| Composição | `compound` reúne as partes geométricas do jogador em um objeto |
+| Iluminação | quatro luzes direcionais representam Sol, preenchimento, céu e reflexo da grama |
+| Composição | cada membro do personagem e cada resíduo agrupam suas primitivas em um `compound` |
 | Instanciamento | `clone()` reutiliza malhas STL em várias posições e rotações |
 | Animação | o `while True` com `rate(FPS)` redesenha e atualiza o estado continuamente |
-| Detecção por distância | `mag` implementa as zonas de interação sem um motor de física |
+| Detecção por distância | distâncias ao quadrado implementam as zonas de interação sem um motor de física |
 
 ## Roteiro curto de teste
 
@@ -187,9 +195,11 @@ O menu de pausa também pode ser aberto pelo botão **Menu**. As seções Como j
 
 ## Limites intencionais do MVP
 
-Não há inventário, áudio, fases, física avançada ou salvamento. O plano de trabalho ainda prevê cronômetro, dificuldades, categorias adicionais e tela inicial; esta revisão priorizou os modelos 3D, as colisões, o reinício e a robustez do jogo.
+Não há inventário, áudio, fases, física avançada ou salvamento. Cronômetro, dificuldades, categorias adicionais e tela inicial foram descartados do escopo final. O plano de trabalho descreve propostas históricas, não pendências da entrega.
 
-## Melhorias futuras (não implementadas)
+O loop limita cada passo a `0.05 s` para evitar saltos após interrupções. Abaixo de 20 FPS sustentados, parte do tempo real é descartada e o jogo desacelera. Não foi removida essa proteção; confira o desempenho no equipamento da apresentação.
+
+## Propostas históricas descartadas da entrega
 
 - cronômetro e níveis de dificuldade;
 - mais categorias, como metal e orgânico;
@@ -199,14 +209,22 @@ Não há inventário, áudio, fases, física avançada ou salvamento. O plano de
 
 ## Testes automatizados
 
-Com o ambiente instalado, execute:
+Para a validação Python final, que reprova testes ignorados ou dependência ausente, execute:
+
+```bash
+./.venv/bin/python validar_entrega.py
+```
+
+No Windows, use `.\.venv\Scripts\python.exe validar_entrega.py`. A aprovação deste comando cobre os testes Python; a integração visual exige o roteiro no navegador. Sem VPython, a execução parcial abaixo pode ignorar testes de regras e não aprova a entrega.
+
+Para executar diretamente a suíte:
 
 ```bash
 ./.venv/bin/python -m unittest discover -s tests -v
 ```
 
 No Windows, use `.\.venv\Scripts\python.exe -m unittest discover -s tests -v`.
-Os testes verificam os 19 STL reais, a cinemática inversa e as poses da animação, arquivos inválidos, fechamento e orientação das malhas de revolução, colisões, movimento diagonal, pausa, coleta, pontuação, vitória e reinício. Não abrem navegador. Os testes de regras usam os vetores reais do VPython com objetos visuais substituídos; a aparência deve ser conferida também no navegador.
+Os testes verificam os 19 STL reais, a cinemática inversa e as poses da animação, arquivos inválidos, fechamento e orientação das malhas de revolução, colisões, avanço combinado com giro, pausa após a vitória, coleta, pontuação, reinício imediato das tampas, interpolação temporal e isolamento dos registros globais. Não abrem navegador. Os testes de regras usam os vetores reais do VPython com objetos visuais substituídos; a aparência deve ser conferida também no navegador.
 
 Acrescente ao roteiro manual:
 
@@ -216,6 +234,9 @@ Acrescente ao roteiro manual:
 11. Redimensione a cena, abra o menu e confirme que os textos continuam utilizáveis.
 12. Caminhe e pare: pernas e braços devem alternar e voltar ao repouso; encoste em uma árvore e confirme que as pernas param.
 13. Colete um item (agachamento) e descarte-o certo (tampa abre, arremesso em arco).
+14. Pressione E duas vezes rapidamente durante a coleta: não deve haver descarte antes de o objeto chegar às mãos; solte e pressione novamente para descartar.
+15. Após a vitória, abra e feche o menu por clique e M/Esc; navegue com 1/2/3, confira foco com Tab e reinicie pelo menu. Durante a pausa, tampas, personagem e voos devem congelar, preservando o movimento das nuvens.
+16. Reinicie com uma tampa parcialmente aberta e redimensione a janela com o menu e a vitória visíveis. Confira imediatamente as tampas fechadas e a legibilidade da interface.
 
 ## Documentação oficial consultada
 

@@ -1,5 +1,7 @@
 # Plano de Trabalho — Parque da Reciclagem 3D
 
+> **Registro histórico — escopo encerrado em 28/10/2026.** As etapas abaixo preservam propostas e decisões de desenvolvimento. Não representam instruções atuais nem uma lista de funcionalidades a implementar. A versão entregue inclui animações articuladas, menu de pausa, colisões e reinício; cronômetro, dificuldades, categorias adicionais e tela inicial foram descartados. O estado atual está no README e em `RELATORIO_CORRECOES_FINAIS.md`. Não criar commits automaticamente.
+
 ## Revisão de 14/10/2026
 
 Prioridade solicitada: ajustes gerais, sobretudo modelos 3D. Implementados nesta revisão: validação de STL, resíduos detalhados, lixeiras abertas, cache por cena, redução de atualizações ociosas, colisões simples e reinício com `R`. Foram adicionados testes automatizados de geometria e regras. Esta revisão não conclui todo o plano: animações, cronômetro, dificuldades, novas categorias e tela inicial continuam pendentes. Por orientação expressa do usuário, não criar commits nesta sessão.
