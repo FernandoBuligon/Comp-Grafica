@@ -14,6 +14,7 @@ Comp-Grafica/
 ├── janela.js
 ├── menu.html
 ├── menu.js
+├── mouse.js
 ├── modelos_residuos.py
 ├── colisoes.py
 ├── iluminacao.py
@@ -58,7 +59,16 @@ O carregador usa apenas a biblioteca padrão do Python e o próprio VPython, con
 
 O pacote **Kenney Nature Kit 2.1** informa licença **Creative Commons Zero (CC0)** em `kenney_nature-kit/License.txt`, portanto pode ser usado neste projeto acadêmico. A atribuição a Kenney não é obrigatória, mas é recomendada.
 
-STL contém geometria, e não uma textura visual ou material. O código recompõe cores por faixas de faces nos modelos que precisam de mais de um material: tronco/copa, caule/pétala, casca/interior da madeira, cogumelo, vitória-régia, cerca e placa. Para aplicar uma imagem à superfície seria necessário também fornecer um PNG/JPG apropriado e coordenadas UV; as imagens das pastas `Side` e `Isometric` são prévias renderizadas, não texturas UV do modelo.
+STL contém geometria, e não uma textura visual ou material. O código recompõe cores por faixas de faces nos modelos que precisam de mais de um material: tronco/copa, caule/pétala, casca/interior da madeira, cogumelo, vitória-régia, cerca e placa. As imagens das pastas `Side` e `Isometric` são prévias renderizadas, não texturas UV do modelo.
+
+## Texturas
+
+As imagens vêm do próprio VPython (`textures.gravel`, `textures.wood`, `textures.stones`), sem arquivos extras:
+
+- **Caminhos (mapeamento UV feito à mão):** `criar_piso_texturizado` cria um `quad` e define em cada vértice a coordenada de textura `texpos = (u, v)`. O `u` cresce com x e o `v` com z, uma unidade a cada 1,5 m; como os valores passam de 1, o cascalho se repete ao longo do caminho em vez de ficar esticado.
+- **Bancos e chafariz:** `box` e `cylinder` recebem `texture=`, usando o mapeamento UV padrão de cada primitiva.
+
+A cor do objeto multiplica a cor da textura: branco mostra a imagem original e um tom areia deixa o cascalho mais claro.
 
 Se a pasta ou algum arquivo for removido, o jogo usa formas simples no lugar dos assets ausentes e continua executando. Para testar outro STL, altere os nomes usados em `criar_parque` ou `criar_decoracoes`; modelos muito detalhados devem ser simplificados para não sobrecarregar o navegador.
 
@@ -138,6 +148,8 @@ O controle é em terceira pessoa: a câmera fica atrás do jogador e gira, com u
 | `S` | andar de ré (mais devagar), sem virar |
 | `A` | girar para a esquerda |
 | `D` | girar para a direita |
+| Arrastar com o mouse | girar o personagem (a câmera acompanha) |
+| Roda do mouse | aproximar ou afastar a câmera |
 | `E` | coletar o lixo próximo ou tentar descartá-lo |
 | `R` | reiniciar a partida, inclusive após a vitória |
 | `M` ou `Esc` | abrir ou fechar o menu sobreposto |
@@ -148,7 +160,9 @@ O controle é em terceira pessoa: a câmera fica atrás do jogador e gira, com u
 - Um descarte incorreto vale **-25 pontos** e o objeto continua com o jogador.
 - O jogo termina quando os seis resíduos forem descartados corretamente.
 
-O menu de pausa também pode ser aberto pelo botão **Menu**. As seções Como jogar, Regras e Sobre aceitam cliques ou os atalhos 1, 2 e 3. Os arquivos `menu.html` e `menu.js` devem acompanhar `main.py`. A iluminação é sempre diurna.
+O menu de pausa também pode ser aberto pelo botão **Menu**. As seções Como jogar, Regras e Sobre aceitam cliques ou os atalhos 1, 2 e 3. Os arquivos `menu.html`, `menu.js` e `mouse.js` devem acompanhar `main.py`.
+
+O `mouse.js` soma o deslocamento horizontal do arraste em cada quadro e envia ao Python `mouse:girar:<pixels>`; a roda envia `mouse:zoom:±1`. Em `JogoReciclagem.receber_mouse`, os pixels viram ângulo (`SENSIBILIDADE_MOUSE` radianos por pixel) e o zoom muda a distância da câmera entre 5 e 14 unidades, com a altura proporcional para manter o ângulo de visão. Com o menu aberto ou após a vitória, o mouse é ignorado. A iluminação é sempre diurna.
 
 O menu funciona também após a vitória. Durante a pausa, personagem, resíduos em voo e tampas ficam congelados; as nuvens continuam em movimento. Ao retomar, o último arremesso pode terminar mesmo com a vitória já registrada. Os atalhos do menu são capturados pelo JavaScript e enviados ao Python; a consulta Python desses atalhos é um fallback antes do primeiro comando HTML recebido. O estado confirmado retorna por um widget de texto persistente, preservando o diálogo e seus ouvintes sem acumular scripts na legenda.
 
@@ -177,6 +191,8 @@ O menu funciona também após a vitória. Durante a pausa, personagem, resíduos
 | Escala | `size`, `radius`, `axis` e o parâmetro `escala` das árvores alteram dimensões |
 | Câmera e perspectiva | `camera.pos`, `camera.axis` e `fov` definem o enquadramento |
 | Cores e transparência | vetores RGB, `color` e `opacity` diferenciam materiais e categorias |
+| Texturas | `criar_piso_texturizado` define `texpos` (u, v) por vértice; bancos e chafariz usam `texture=` |
+| Navegação por mouse | `mouse.js` + `receber_mouse`: arrastar gira o personagem, a roda faz zoom |
 | Iluminação | quatro luzes direcionais representam Sol, preenchimento, céu e reflexo da grama |
 | Composição | cada membro do personagem e cada resíduo agrupam suas primitivas em um `compound` |
 | Instanciamento | `clone()` reutiliza malhas STL em várias posições e rotações |
