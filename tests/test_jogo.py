@@ -331,6 +331,25 @@ class RegrasJogo(unittest.TestCase):
         self.assertGreater(camera.axis.norm().dot(frente), .8)
         self.assertFalse(jogo.camera_precisa_atualizar())
 
+    def test_mouse_gira_personagem_e_aproxima_camera(self):
+        jogo = self.jogo
+        angulo = self.jogador.angulo
+        jogo.receber_mouse(SimpleNamespace(key='mouse:girar:100'))
+        jogo.atualizar(set(), .016)
+        # Arrastar para a direita gira como a tecla D (ângulo diminui).
+        self.assertAlmostEqual(self.jogador.angulo,
+                               angulo - 100 * main.SENSIBILIDADE_MOUSE)
+        for _ in range(50):
+            jogo.receber_mouse(SimpleNamespace(key='mouse:zoom:-1'))
+        jogo.atualizar(set(), .016)
+        self.assertEqual(jogo.distancia_camera, main.DISTANCIA_CAMERA_MINIMA)
+        distancia = (jogo.cena.camera.pos - self.jogador.pos)
+        self.assertLess(distancia.mag, main.DISTANCIA_CAMERA)
+        # Com o menu aberto, o mouse não move o jogo.
+        jogo.alternar_menu()
+        jogo.receber_mouse(SimpleNamespace(key='mouse:girar:100'))
+        self.assertEqual(jogo.giro_mouse, 0)
+
     def test_re_mantem_a_direcao(self):
         angulo = self.jogador.angulo
         self.jogo.atualizar_jogador({'s'}, .1)
@@ -341,6 +360,7 @@ class RegrasJogo(unittest.TestCase):
     def test_cenario_mantem_todos_os_objetivos_acessiveis(self):
         with ExitStack() as pilha:
             for nome in ('box', 'cylinder', 'sphere', 'ellipsoid', 'compound',
+                         'quad', 'vertex',
                          'criar_instancia_stl',
                          'criar_modelo_residuo'):
                 pilha.enter_context(patch.object(main, nome, return_value=SimpleNamespace()))

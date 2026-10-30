@@ -25,9 +25,12 @@ try:
         keysdown,
         label,
         mag,
+        quad,
         rate,
         sphere,
+        textures,
         vector,
+        vertex,
         wtext,
     )
 except ModuleNotFoundError as erro:
@@ -71,6 +74,10 @@ DISTANCIA_CAMERA = 8.5         # atrás do jogador
 ALTURA_CAMERA = 5.0
 ALCANCE_ALVO_CAMERA = 2.5      # ponto observado à frente do jogador
 TAXA_GIRO_CAMERA = 5.0
+SENSIBILIDADE_MOUSE = .006     # radianos de giro por pixel arrastado
+DISTANCIA_CAMERA_MINIMA = 5.0  # limites do zoom pela roda do mouse
+DISTANCIA_CAMERA_MAXIMA = 14.0
+PASSO_ZOOM = 1.0
 LARGURA_PARQUE = 34.0
 PROFUNDIDADE_PARQUE = 26.0
 LARGURA_CENA_PADRAO = 960
@@ -150,6 +157,8 @@ def acompanhar_janela(cena):
     cena.append_to_caption((pasta / "menu.html").read_text(encoding="utf-8"))
     menu = (pasta / "menu.js").read_text(encoding="utf-8")
     cena.append_to_caption(f"<script>{menu}</script>")
+    mouse = (pasta / "mouse.js").read_text(encoding="utf-8")
+    cena.append_to_caption(f"<script>{mouse}</script>")
 
 
 def formatar_estado_interface(pontuacao, restantes, carregando, largura):
@@ -545,6 +554,9 @@ class JogoReciclagem:
         self.ultimo_estado_hud = None
         self.r_estava_pressionado = False
         self.angulo_camera = jogador.angulo
+        self.giro_mouse = 0.0
+        self.distancia_camera = DISTANCIA_CAMERA
+        self.distancia_camera_aplicada = None
         # Widget persistente: atualizar text não acrescenta HTML à legenda.
         self.estado_menu = wtext(
             text='<span id="estado-menu" hidden>{"aberto":false,"secao":"1"}</span>')
@@ -563,6 +575,7 @@ class JogoReciclagem:
             line=False,
         )
         self.cena.bind("keydown", self.receber_acao_menu)
+        self.cena.bind("keydown", self.receber_mouse)
         self.cena.bind("resize", self.ao_redimensionar_cena)
         self.ajustar_layout_cena()
         self.atualizar_camera()
@@ -580,6 +593,22 @@ class JogoReciclagem:
             # O primeiro comando recebido confirma a captura dos atalhos no JS.
             self.menu_html_ativo = True
             self.acoes_menu.append(chave[5:])
+
+    def receber_mouse(self, evento):
+        """Arrastar gira o personagem; a roda aproxima ou afasta a câmera.
+
+        O ``mouse.js`` envia ``mouse:girar:<pixels>`` e ``mouse:zoom:<±1>``.
+        """
+        partes = evento.key.split(":")
+        if partes[0] != "mouse" or self.menu_aberto or self.encerrado:
+            return
+        acao, valor = partes[1], float(partes[2])
+        if acao == "girar":
+            # Arrastar para a direita gira para a direita (ângulo negativo).
+            self.giro_mouse -= valor * SENSIBILIDADE_MOUSE
+        elif acao == "zoom":
+            self.distancia_camera = max(DISTANCIA_CAMERA_MINIMA, min(
+                DISTANCIA_CAMERA_MAXIMA, self.distancia_camera + valor * PASSO_ZOOM))
 
     def atualizar_texto_menu(self):
         estado = json.dumps({"aberto": self.menu_aberto,
@@ -618,6 +647,7 @@ class JogoReciclagem:
         self.lixo_carregado = None
         self.origem_coleta = None
         self.voos = []
+        self.giro_mouse = 0.0
         self.pontuacao = 0
         self.encerrado = False
         for lixeira in self.lixeiras:
@@ -681,10 +711,13 @@ class JogoReciclagem:
         self.atualizar_interface()
 
     def atualizar_jogador(self, teclas, delta_t):
-        """Controle em terceira pessoa: A/D giram, W/S andam na direção do olhar."""
+        """Controle em terceira pessoa: A/D ou o mouse giram, W/S andam."""
         giro = int("a" in teclas) - int("d" in teclas)
         if giro:
             self.jogador.girar(giro * VELOCIDADE_GIRO * delta_t)
+        if self.giro_mouse:
+            self.jogador.girar(self.giro_mouse)
+            self.giro_mouse = 0.0
 
         avanco = int("w" in teclas) - int("s" in teclas)
         if avanco == 0:
@@ -730,7 +763,8 @@ class JogoReciclagem:
 
     def camera_precisa_atualizar(self):
         diferenca = (self.jogador.angulo - self.angulo_camera + pi) % tau - pi
-        return abs(diferenca) > 1e-4
+        return (abs(diferenca) > 1e-4
+                or self.distancia_camera != self.distancia_camera_aplicada)
 
     def atualizar_camera(self, delta_t=None):
         """Câmera em terceira pessoa, atrás do jogador e voltada para onde ele olha.
@@ -745,9 +779,12 @@ class JogoReciclagem:
                 self.angulo_camera, self.jogador.angulo, TAXA_GIRO_CAMERA, delta_t)
         frente = vector(sin(self.angulo_camera), 0, cos(self.angulo_camera))
         alvo = self.jogador.pos + vector(0, 1.2, 0) + frente * ALCANCE_ALVO_CAMERA
+        # A altura acompanha o zoom para manter o mesmo ângulo de visão.
+        altura = ALTURA_CAMERA * self.distancia_camera / DISTANCIA_CAMERA
         self.cena.camera.pos = (
-            self.jogador.pos - frente * DISTANCIA_CAMERA + vector(0, ALTURA_CAMERA, 0)
+            self.jogador.pos - frente * self.distancia_camera + vector(0, altura, 0)
         )
+        self.distancia_camera_aplicada = self.distancia_camera
         self.cena.camera.axis = alvo - self.cena.camera.pos
 
     def ao_redimensionar_cena(self, _evento=None):
@@ -1044,7 +1081,8 @@ def criar_chafariz(centro):
     cor_pedra = vector(0.62, 0.60, 0.56)
     cor_pedra_escura = vector(0.48, 0.47, 0.45)
     cor_agua = vector(0.30, 0.66, 0.90)
-    cylinder(pos=centro, axis=vector(0, 0.45, 0), radius=1.4, color=cor_pedra)
+    cylinder(pos=centro, axis=vector(0, 0.45, 0), radius=1.4, color=cor_pedra,
+             texture=textures.stones)
     cylinder(pos=centro + vector(0, 0.45, 0), axis=vector(0, 0.06, 0),
              radius=1.48, color=cor_pedra_escura)
     cylinder(pos=centro + vector(0, 0.46, 0), axis=vector(0, 0.02, 0),
@@ -1274,17 +1312,20 @@ def criar_banco(posicao):
     OBSTACULOS.append(Obstaculo(posicao.x, posicao.z, meia_largura=1.35,
                                 meia_profundidade=.40))
     Sombra(posicao, raio=1.0, altura=1.4)
-    cor_madeira = vector(0.55, 0.32, 0.13)
+    # A cor multiplica a textura: branco mostra a madeira com suas cores reais.
+    cor_madeira = vector(1, 1, 1)
     cor_metal = vector(0.18, 0.20, 0.22)
     box(
         pos=posicao + vector(0, 0.72, 0),
         size=vector(2.7, 0.18, 0.72),
         color=cor_madeira,
+        texture=textures.wood,
     )
     box(
         pos=posicao + vector(0, 1.3, 0.31),
         size=vector(2.7, 0.85, 0.15),
         color=cor_madeira,
+        texture=textures.wood,
     )
     for deslocamento_x in (-1.0, 1.0):
         box(
@@ -1517,6 +1558,30 @@ def criar_decoracoes():
     )
 
 
+def criar_piso_texturizado(centro, largura, profundidade, textura, cor,
+                           ladrilho=1.5):
+    """Retângulo horizontal com coordenadas de textura (u, v) definidas à mão.
+
+    Cada canto recebe (u, v): u cresce com x e v cresce com z, uma unidade a
+    cada ``ladrilho`` metros. Valores acima de 1 repetem a imagem, em vez de
+    esticar uma única cópia por todo o caminho.
+    """
+    meia_x, meia_z = largura / 2, profundidade / 2
+    u, v = largura / ladrilho, profundidade / ladrilho
+    cantos = (
+        (-meia_x, -meia_z, 0, 0),
+        (-meia_x, meia_z, 0, v),
+        (meia_x, meia_z, u, v),
+        (meia_x, -meia_z, u, 0),
+    )
+    return quad(
+        vs=[vertex(pos=centro + vector(x, 0, z), normal=vector(0, 1, 0),
+                   texpos=vector(tu, tv, 0), color=cor)
+            for x, z, tu, tv in cantos],
+        texture=textura,
+    )
+
+
 def criar_parque():
     """Cria o parque ampliado, seus caminhos e elementos naturais."""
     OBSTACULOS.clear()
@@ -1526,21 +1591,14 @@ def criar_parque():
         size=vector(LARGURA_PARQUE, 0.24, PROFUNDIDADE_PARQUE),
         color=vector(0.22, 0.62, 0.23),
     )
-    box(
-        pos=vector(0, 0.015, 0),
-        size=vector(4.2, 0.03, PROFUNDIDADE_PARQUE),
-        color=vector(0.72, 0.67, 0.54),
-    )
-    box(
-        pos=vector(0, 0.017, 1.2),
-        size=vector(25, 0.034, 3.2),
-        color=vector(0.72, 0.67, 0.54),
-    )
-    box(
-        pos=vector(0, 0.019, -9.7),
-        size=vector(12, 0.038, 3.0),
-        color=vector(0.72, 0.67, 0.54),
-    )
+    # Caminhos de cascalho: a textura é repetida pelas coordenadas (u, v).
+    cor_caminho = vector(1.0, 0.94, 0.80)
+    criar_piso_texturizado(vector(0, 0.030, 0), 4.2, PROFUNDIDADE_PARQUE,
+                           textures.gravel, cor_caminho)
+    criar_piso_texturizado(vector(0, 0.034, 1.2), 25, 3.2,
+                           textures.gravel, cor_caminho)
+    criar_piso_texturizado(vector(0, 0.038, -9.7), 12, 3.0,
+                           textures.gravel, cor_caminho)
     cylinder(
         pos=vector(0, 0.035, 1.2),
         axis=vector(0, 0.035, 0),
