@@ -1579,6 +1579,7 @@ def criar_piso_texturizado(centro, largura, profundidade, textura, cor,
                    texpos=vector(tu, tv, 0), color=cor)
             for x, z, tu, tv in cantos],
         texture=textura,
+        shininess=0,
     )
 
 
@@ -1586,10 +1587,12 @@ def criar_parque():
     """Cria o parque ampliado, seus caminhos e elementos naturais."""
     OBSTACULOS.clear()
     SOMBRAS.clear()
+    # Grama e caminhos são foscos: sem brilho especular espalhado pelo chão.
     box(
         pos=vector(0, -0.12, 0),
         size=vector(LARGURA_PARQUE, 0.24, PROFUNDIDADE_PARQUE),
         color=vector(0.22, 0.62, 0.23),
+        shininess=0,
     )
     # Caminhos de cascalho: a textura é repetida pelas coordenadas (u, v).
     cor_caminho = vector(1.0, 0.94, 0.80)
@@ -1604,6 +1607,7 @@ def criar_parque():
         axis=vector(0, 0.035, 0),
         radius=2.8,
         color=vector(0.76, 0.70, 0.57),
+        shininess=0,
     )
 
     criar_lago()
@@ -1727,7 +1731,9 @@ def criar_lixos():
     for nome, tipo, coordenadas, altura_rotulo in especificacoes:
         posicao = vector(*coordenadas)
         modelo = criar_modelo_residuo(nome, posicao)
-        sombra = Sombra(posicao, raio=.24, altura=max(.15, altura_rotulo - .4))
+        # A folha é mais fina que a altura das sombras e ficaria coberta pela própria.
+        sombra = None if nome == "folha de papel" else Sombra(
+            posicao, raio=.24, altura=max(.15, altura_rotulo - .4))
         lixos.append(Lixo(nome, tipo, posicao, modelo, altura_rotulo=altura_rotulo,
                           sombra=sombra))
     return lixos

@@ -3,14 +3,19 @@
 Perfis de revolução tornam garrafas, copos e potes reconhecíveis. As superfícies
 internas dos recipientes são geometria real; não dependem de transparência.
 """
-from math import cos, sin, tau
+from math import cos, hypot, sin, tau
 
 
 def faces_revolucao(perfil, segmentos=16):
     """Triangula um perfil (raio, altura) percorrido da base para o topo.
 
     Para fechar um recipiente, continue pela parede interna e termine no eixo.
-    Retorna (faixa, face); a faixa permite atribuir materiais sem perder detalhes.
+    Retorna (faixa, face, normais); a faixa permite atribuir materiais sem
+    perder detalhes.
+
+    As normais são por vértice: em cada faixa, a normal do perfil (nr, ny) é
+    girada até o ângulo do vértice. Assim a superfície fica lisa em volta do
+    eixo, mas as quinas do perfil (fundo, ombro, tampa) continuam marcadas.
     """
     if segmentos < 3 or len(perfil) < 2:
         raise ValueError("O perfil precisa de dois pontos e ao menos três segmentos.")
@@ -18,15 +23,20 @@ def faces_revolucao(perfil, segmentos=16):
     circulo = [(cos(tau * i / segmentos), sin(tau * i / segmentos))
                for i in range(segmentos + 1)]
     for faixa, ((r0, y0), (r1, y1)) in enumerate(zip(perfil, perfil[1:])):
+        # Perpendicular ao segmento do perfil, apontando para fora da superfície.
+        comprimento = hypot(r1 - r0, y1 - y0)
+        nr, ny = (y1 - y0) / comprimento, -(r1 - r0) / comprimento
         for (ca, sa), (cb, sb) in zip(circulo, circulo[1:]):
             p = (r0 * ca, y0, r0 * sa)
             q = (r1 * ca, y1, r1 * sa)
             r = (r1 * cb, y1, r1 * sb)
             s = (r0 * cb, y0, r0 * sb)
+            na = (nr * ca, ny, nr * sa)
+            nb = (nr * cb, ny, nr * sb)
             if r1 > 0:
-                faces.append((faixa, (p, q, r)))
+                faces.append((faixa, (p, q, r), (na, na, nb)))
             if r0 > 0:
-                faces.append((faixa, (p, r, s)))
+                faces.append((faixa, (p, r, s), (na, nb, nb)))
     return faces
 
 
@@ -87,17 +97,16 @@ def criar_modelo_residuo(nome, posicao):
         cor_base = vector(*CORES_RESIDUOS[nome])
         cor_rotulo = vector(.92, .94, .85)
         cor_tampa = vector(.10, .22, .58)
-        for faixa, face in faces_revolucao(PERFIS[nome]):
+        for faixa, face, normais in faces_revolucao(PERFIS[nome]):
             cor = cor_base
             if nome == "garrafa plástica":
                 if faixa == 4:
                     cor = cor_rotulo  # Rótulo em volta do corpo.
                 elif faixa >= 9:
                     cor = cor_tampa  # Tampa e gargalo.
-            pontos = [posicao + vector(*p) for p in face]
-            normal = (pontos[1] - pontos[0]).cross(pontos[2] - pontos[0]).norm()
-            partes.append(triangle(vs=[vertex(pos=p, normal=normal, color=cor)
-                                        for p in pontos]))
+            partes.append(triangle(vs=[
+                vertex(pos=posicao + vector(*p), normal=vector(*n), color=cor)
+                for p, n in zip(face, normais)]))
     else:
         raise ValueError(f"Modelo desconhecido: {nome}")
 

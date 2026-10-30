@@ -12,8 +12,9 @@ DIRECAO_SOL = (-0.55, 1.0, 0.35)
 # Paleta diurna fixa.
 PALETA = {
     "fundo": (0.50, 0.76, 0.92),
-    "ambiente": (0.12, 0.13, 0.14),
-    "sol": (0.70, 0.66, 0.58),
+    # Ambiente mais forte evita faces quase pretas no lado oposto ao Sol.
+    "ambiente": (0.30, 0.31, 0.33),
+    "sol": (0.62, 0.58, 0.51),
     "preenchimento": (0.11, 0.13, 0.16),
     "ceu": (0.08, 0.10, 0.13),
     "reflexo_grama": (0.05, 0.08, 0.04),

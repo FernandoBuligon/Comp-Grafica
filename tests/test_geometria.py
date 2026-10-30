@@ -9,11 +9,15 @@ class Geometria(unittest.TestCase):
             faces = faces_revolucao(perfil)
             arestas = {}
             volume = 0
-            for _, (a, b, c) in faces:
+            for _, (a, b, c), normais in faces:
                 u = [b[i] - a[i] for i in range(3)]
                 v = [c[i] - a[i] for i in range(3)]
                 cruz = (u[1]*v[2]-u[2]*v[1], u[2]*v[0]-u[0]*v[2], u[0]*v[1]-u[1]*v[0])
                 self.assertGreater(sum(t*t for t in cruz), 1e-14, nome)
+                # Normais de vértice unitárias e do mesmo lado da normal da face.
+                for n in normais:
+                    self.assertAlmostEqual(sum(t*t for t in n), 1, msg=nome)
+                    self.assertGreater(sum(n[i]*cruz[i] for i in range(3)), 0, nome)
                 volume += sum(a[i]*cruz[i] for i in range(3))/6
                 pontos = [tuple(round(t, 9) for t in p) for p in (a, b, c)]
                 for p, q in zip(pontos, pontos[1:] + pontos[:1]):
