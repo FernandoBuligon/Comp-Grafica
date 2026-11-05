@@ -39,6 +39,19 @@ O jogo permanece concentrado em `main.py` para facilitar a apresentação. A lei
 - `animacao.py`: calcula, sem depender do VPython, a pose articulada do personagem (caminhada, respiração, coleta e arremesso);
 - `executar`: contém o loop principal de animação.
 
+## Apresentação e defesa
+
+Abra [apresentacao.html](apresentacao.html) diretamente no navegador. São **22 slides principais e 4 de apoio**, organizados pelos quatro eixos do enunciado, com diagramas, exemplos do código e notas de fala. As imagens estão incorporadas ao HTML.
+
+Use **←/→** ou **Espaço** para navegar, **I** para abrir o índice, **N** para consultar as notas, **F** para tela cheia e **P** para imprimir ou salvar em PDF. No celular, deslize horizontalmente para trocar de slide e role verticalmente para ler.
+
+- [Versão PDF](artifacts/apresentacao/apresentacao.pdf).
+- [Roteiro de fala e demonstração](docs/roteiro-apresentacao.md).
+- [Análise do repositório e aderência ao enunciado](docs/analise-repositorio.md).
+- [Evidências da revisão dos slides](artifacts/apresentacao/evidencias.json).
+
+A apresentação distingue os cálculos próprios do projeto dos recursos do VPython e explica os limites da hierarquia, dos materiais e do tempo em baixo FPS. A análise também registra a divergência entre a exigência de trabalho individual e os dois nomes já presentes na capa, para conferência antes da entrega.
+
 ## Assets STL testados
 
 O parque usa 19 modelos STL distintos. Os elementos repetidos são clonados, portanto a mesma malha não precisa ser reconstruída em cada posição:
