@@ -41,16 +41,18 @@ O jogo permanece concentrado em `main.py` para facilitar a apresentação. A lei
 
 ## Apresentação e defesa
 
-Abra [apresentacao.html](apresentacao.html) diretamente no navegador. São **22 slides principais e 4 de apoio**, organizados pelos quatro eixos do enunciado, com diagramas, exemplos do código e notas de fala. As imagens estão incorporadas ao HTML.
+Abra [apresentacao.html](apresentacao.html) diretamente no navegador. São **16 slides**, organizados pelos quatro eixos do enunciado, com diagramas e capturas do jogo, incluindo a câmera aérea. As imagens estão incorporadas ao HTML.
 
-Use **←/→** ou **Espaço** para navegar, **I** para abrir o índice, **N** para consultar as notas, **F** para tela cheia e **P** para imprimir ou salvar em PDF. No celular, deslize horizontalmente para trocar de slide e role verticalmente para ler.
+Use **←/→**, **Espaço**, **Page Up/Page Down** ou a roda do mouse para navegar, **Home/End** para ir ao primeiro ou ao último slide, o botão **Sumário** para voltar ao roteiro e **F** para tela cheia. No celular, deslize para trocar de slide.
+
+Material da versão anterior da apresentação (22 slides), mantido para consulta:
 
 - [Versão PDF](artifacts/apresentacao/apresentacao.pdf).
 - [Roteiro de fala e demonstração](docs/roteiro-apresentacao.md).
 - [Análise do repositório e aderência ao enunciado](docs/analise-repositorio.md).
 - [Evidências da revisão dos slides](artifacts/apresentacao/evidencias.json).
 
-A apresentação distingue os cálculos próprios do projeto dos recursos do VPython e explica os limites da hierarquia, dos materiais e do tempo em baixo FPS. A análise também registra a divergência entre a exigência de trabalho individual e os dois nomes já presentes na capa, para conferência antes da entrega.
+A apresentação distingue o que foi implementado no projeto do que é feito pelo VPython e lista os limites assumidos (sombras aproximadas, colisões simplificadas e ausência de shader próprio). A análise também registra a divergência entre a exigência de trabalho individual e os dois nomes já presentes na capa, para conferência antes da entrega.
 
 ## Assets STL testados
 
