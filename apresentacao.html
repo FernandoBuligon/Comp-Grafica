@@ -86,7 +86,7 @@ table.mat td:first-child{font-weight:700}
 <div class="grid agenda">
 <a class="card" href="#slide-3"><span class="number">01</span><h3>O jogo e o código</h3><p>Ideia, regras e como o projeto está organizado.</p></a>
 <a class="card" href="#slide-6"><span class="number">I</span><h3>Geometria e espaço</h3><p>Transformações, malhas STL e por revolução, hierarquia do personagem.</p></a>
-<a class="card" href="#slide-9"><span class="number">II</span><h3>Visualização e interação</h3><p>Câmera em 3ª pessoa, projeção perspectiva, mouse, teclado e colisões.</p></a>
+<a class="card" href="#slide-9"><span class="number">II</span><h3>Visualização e interação</h3><p>Câmera em 3ª pessoa e aérea, projeção perspectiva, mouse, teclado e colisões.</p></a>
 <a class="card" href="#slide-11"><span class="number">III</span><h3>Estética e renderização</h3><p>Luzes, sombras projetadas, normais, materiais e texturas UV.</p></a>
 </div>
 <div class="grid agenda">
@@ -132,7 +132,7 @@ table.mat td:first-child{font-weight:700}
 <section class="slide" aria-label="Regras e controles" data-title="Regras e controles"><div class="slide-content dense"><header><span class="eyebrow">Como jogar</span><span class="seed" aria-hidden="true">● ● ●</span></header><h2>Separar certo para ganhar pontos</h2>
 <div class="bins"><article class="bin paper"><b>PAPEL</b><span>Folha e caixa</span></article><article class="bin plastic"><b>PLÁSTICO</b><span>Garrafa e copo</span></article><article class="bin glass"><b>VIDRO</b><span>Garrafa e pote</span></article></div>
 <div class="scoreline"><p><strong>+100</strong><span>Na lixeira certa: o resíduo é arremessado para dentro</span></p><p><strong class="error">−25</strong><span>Na lixeira errada: o resíduo continua com você</span></p><p><strong>6 / 6</strong><span>Parque limpo: vitória!</span></p></div>
-<div class="controls"><span><kbd>W</kbd><kbd>S</kbd> andar / ré</span><span><kbd>A</kbd><kbd>D</kbd> girar</span><span><kbd>arrastar</kbd> girar com o mouse</span><span><kbd>roda</kbd> zoom da câmera</span><span><kbd>E</kbd> pegar / descartar</span><span><kbd>R</kbd> reiniciar</span><span><kbd>M</kbd>/<kbd>Esc</kbd> menu</span></div>
+<div class="controls"><span><kbd>W</kbd><kbd>S</kbd> andar / ré</span><span><kbd>A</kbd><kbd>D</kbd> girar</span><span><kbd>arrastar</kbd> girar com o mouse</span><span><kbd>roda</kbd> zoom da câmera</span><span><kbd>C</kbd> vista de cima</span><span><kbd>E</kbd> pegar / descartar</span><span><kbd>R</kbd> reiniciar</span><span><kbd>M</kbd>/<kbd>Esc</kbd> menu</span></div>
 <p class="ribbon">Um item por vez. Árvores, bancos, lago, cercas e lixeiras bloqueiam a passagem.</p>
 </div></section>
 
@@ -251,6 +251,7 @@ self.cena.camera.axis = alvo - self.cena.camera.pos</pre>
 <li><b>Atrás e acima do jogador:</b> <span>8,5 m atrás, 5 m de altura, mirando 2,5 m à frente dele.</span></li>
 <li><b>Giro suave:</b> <span>o ângulo da câmera persegue o do jogador com <code>aproximar_angulo</code>, pelo menor arco.</span></li>
 <li><b>FOV responsivo:</b> <span>58° em paisagem até 74° em retrato (<code>calcular_fov_responsivo</code>).</span></li>
+<li><b>Câmera aérea fixa (tecla C):</b> <span>vertical sobre o centro, com <code>up</code> = −Z; a altura <var>h</var> = meia extensão / tan(fov/2) enquadra o parque inteiro.</span></li>
 </ul>
 </div><div>
 <p class="eq">Matriz de projeção (<code>mat4.perspective</code>)<br>
@@ -498,7 +499,7 @@ self.tampa.up = vector(<span class="n">0</span>, cos(angulo), -sin(angulo))</pre
 <li>Malhas dos resíduos geradas por perfil de revolução, com normais por vértice</li>
 <li>Hierarquia do personagem: pivôs, composição de ângulos e mudança de base</li>
 <li>Cinemática inversa das pernas (lei dos cossenos)</li>
-<li>Câmera em 3ª pessoa com zoom e FOV responsivo</li>
+<li>Câmera em 3ª pessoa com zoom e FOV responsivo, e câmera aérea fixa que enquadra o parque</li>
 <li>Coordenadas UV dos caminhos com repetição</li>
 <li>Sombras projetadas por semelhança de triângulos</li>
 <li>Colisões com deslizamento; animação por Δt e suavização exponencial</li>
