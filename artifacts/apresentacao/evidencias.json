@@ -1,0 +1,1453 @@
+{
+  "data": "2026-11-05",
+  "slides": 26,
+  "verificacoes_layout": 156,
+  "viewports": [
+    [
+      1440,
+      900
+    ],
+    [
+      1280,
+      720
+    ],
+    [
+      1024,
+      768
+    ],
+    [
+      1920,
+      1080
+    ],
+    [
+      390,
+      844
+    ],
+    [
+      844,
+      390
+    ]
+  ],
+  "issues": [],
+  "erros_javascript": [],
+  "requisicoes_externas_slides": [],
+  "checks": [
+    {
+      "slide": 1,
+      "viewport": [
+        1440,
+        900
+      ],
+      "horizontal": true,
+      "frame_height": 900
+    },
+    {
+      "slide": 2,
+      "viewport": [
+        1440,
+        900
+      ],
+      "horizontal": true,
+      "frame_height": 900
+    },
+    {
+      "slide": 3,
+      "viewport": [
+        1440,
+        900
+      ],
+      "horizontal": true,
+      "frame_height": 900
+    },
+    {
+      "slide": 4,
+      "viewport": [
+        1440,
+        900
+      ],
+      "horizontal": true,
+      "frame_height": 900
+    },
+    {
+      "slide": 5,
+      "viewport": [
+        1440,
+        900
+      ],
+      "horizontal": true,
+      "frame_height": 900
+    },
+    {
+      "slide": 6,
+      "viewport": [
+        1440,
+        900
+      ],
+      "horizontal": true,
+      "frame_height": 900
+    },
+    {
+      "slide": 7,
+      "viewport": [
+        1440,
+        900
+      ],
+      "horizontal": true,
+      "frame_height": 900
+    },
+    {
+      "slide": 8,
+      "viewport": [
+        1440,
+        900
+      ],
+      "horizontal": true,
+      "frame_height": 900
+    },
+    {
+      "slide": 9,
+      "viewport": [
+        1440,
+        900
+      ],
+      "horizontal": true,
+      "frame_height": 900
+    },
+    {
+      "slide": 10,
+      "viewport": [
+        1440,
+        900
+      ],
+      "horizontal": true,
+      "frame_height": 900
+    },
+    {
+      "slide": 11,
+      "viewport": [
+        1440,
+        900
+      ],
+      "horizontal": true,
+      "frame_height": 900
+    },
+    {
+      "slide": 12,
+      "viewport": [
+        1440,
+        900
+      ],
+      "horizontal": true,
+      "frame_height": 900
+    },
+    {
+      "slide": 13,
+      "viewport": [
+        1440,
+        900
+      ],
+      "horizontal": true,
+      "frame_height": 900
+    },
+    {
+      "slide": 14,
+      "viewport": [
+        1440,
+        900
+      ],
+      "horizontal": true,
+      "frame_height": 900
+    },
+    {
+      "slide": 15,
+      "viewport": [
+        1440,
+        900
+      ],
+      "horizontal": true,
+      "frame_height": 900
+    },
+    {
+      "slide": 16,
+      "viewport": [
+        1440,
+        900
+      ],
+      "horizontal": true,
+      "frame_height": 900
+    },
+    {
+      "slide": 17,
+      "viewport": [
+        1440,
+        900
+      ],
+      "horizontal": true,
+      "frame_height": 900
+    },
+    {
+      "slide": 18,
+      "viewport": [
+        1440,
+        900
+      ],
+      "horizontal": true,
+      "frame_height": 900
+    },
+    {
+      "slide": 19,
+      "viewport": [
+        1440,
+        900
+      ],
+      "horizontal": true,
+      "frame_height": 900
+    },
+    {
+      "slide": 20,
+      "viewport": [
+        1440,
+        900
+      ],
+      "horizontal": true,
+      "frame_height": 900
+    },
+    {
+      "slide": 21,
+      "viewport": [
+        1440,
+        900
+      ],
+      "horizontal": true,
+      "frame_height": 900
+    },
+    {
+      "slide": 22,
+      "viewport": [
+        1440,
+        900
+      ],
+      "horizontal": true,
+      "frame_height": 900
+    },
+    {
+      "slide": 23,
+      "viewport": [
+        1440,
+        900
+      ],
+      "horizontal": true,
+      "frame_height": 900
+    },
+    {
+      "slide": 24,
+      "viewport": [
+        1440,
+        900
+      ],
+      "horizontal": true,
+      "frame_height": 900
+    },
+    {
+      "slide": 25,
+      "viewport": [
+        1440,
+        900
+      ],
+      "horizontal": true,
+      "frame_height": 900
+    },
+    {
+      "slide": 26,
+      "viewport": [
+        1440,
+        900
+      ],
+      "horizontal": true,
+      "frame_height": 900
+    },
+    {
+      "slide": 1,
+      "viewport": [
+        1280,
+        720
+      ],
+      "horizontal": true,
+      "frame_height": 720
+    },
+    {
+      "slide": 2,
+      "viewport": [
+        1280,
+        720
+      ],
+      "horizontal": true,
+      "frame_height": 720
+    },
+    {
+      "slide": 3,
+      "viewport": [
+        1280,
+        720
+      ],
+      "horizontal": true,
+      "frame_height": 720
+    },
+    {
+      "slide": 4,
+      "viewport": [
+        1280,
+        720
+      ],
+      "horizontal": true,
+      "frame_height": 720
+    },
+    {
+      "slide": 5,
+      "viewport": [
+        1280,
+        720
+      ],
+      "horizontal": true,
+      "frame_height": 720
+    },
+    {
+      "slide": 6,
+      "viewport": [
+        1280,
+        720
+      ],
+      "horizontal": true,
+      "frame_height": 720
+    },
+    {
+      "slide": 7,
+      "viewport": [
+        1280,
+        720
+      ],
+      "horizontal": true,
+      "frame_height": 720
+    },
+    {
+      "slide": 8,
+      "viewport": [
+        1280,
+        720
+      ],
+      "horizontal": true,
+      "frame_height": 720
+    },
+    {
+      "slide": 9,
+      "viewport": [
+        1280,
+        720
+      ],
+      "horizontal": true,
+      "frame_height": 720
+    },
+    {
+      "slide": 10,
+      "viewport": [
+        1280,
+        720
+      ],
+      "horizontal": true,
+      "frame_height": 720
+    },
+    {
+      "slide": 11,
+      "viewport": [
+        1280,
+        720
+      ],
+      "horizontal": true,
+      "frame_height": 720
+    },
+    {
+      "slide": 12,
+      "viewport": [
+        1280,
+        720
+      ],
+      "horizontal": true,
+      "frame_height": 720
+    },
+    {
+      "slide": 13,
+      "viewport": [
+        1280,
+        720
+      ],
+      "horizontal": true,
+      "frame_height": 720
+    },
+    {
+      "slide": 14,
+      "viewport": [
+        1280,
+        720
+      ],
+      "horizontal": true,
+      "frame_height": 720
+    },
+    {
+      "slide": 15,
+      "viewport": [
+        1280,
+        720
+      ],
+      "horizontal": true,
+      "frame_height": 720
+    },
+    {
+      "slide": 16,
+      "viewport": [
+        1280,
+        720
+      ],
+      "horizontal": true,
+      "frame_height": 720
+    },
+    {
+      "slide": 17,
+      "viewport": [
+        1280,
+        720
+      ],
+      "horizontal": true,
+      "frame_height": 720
+    },
+    {
+      "slide": 18,
+      "viewport": [
+        1280,
+        720
+      ],
+      "horizontal": true,
+      "frame_height": 720
+    },
+    {
+      "slide": 19,
+      "viewport": [
+        1280,
+        720
+      ],
+      "horizontal": true,
+      "frame_height": 720
+    },
+    {
+      "slide": 20,
+      "viewport": [
+        1280,
+        720
+      ],
+      "horizontal": true,
+      "frame_height": 720
+    },
+    {
+      "slide": 21,
+      "viewport": [
+        1280,
+        720
+      ],
+      "horizontal": true,
+      "frame_height": 720
+    },
+    {
+      "slide": 22,
+      "viewport": [
+        1280,
+        720
+      ],
+      "horizontal": true,
+      "frame_height": 720
+    },
+    {
+      "slide": 23,
+      "viewport": [
+        1280,
+        720
+      ],
+      "horizontal": true,
+      "frame_height": 720
+    },
+    {
+      "slide": 24,
+      "viewport": [
+        1280,
+        720
+      ],
+      "horizontal": true,
+      "frame_height": 720
+    },
+    {
+      "slide": 25,
+      "viewport": [
+        1280,
+        720
+      ],
+      "horizontal": true,
+      "frame_height": 720
+    },
+    {
+      "slide": 26,
+      "viewport": [
+        1280,
+        720
+      ],
+      "horizontal": true,
+      "frame_height": 720
+    },
+    {
+      "slide": 1,
+      "viewport": [
+        1024,
+        768
+      ],
+      "horizontal": true,
+      "frame_height": 768
+    },
+    {
+      "slide": 2,
+      "viewport": [
+        1024,
+        768
+      ],
+      "horizontal": true,
+      "frame_height": 768
+    },
+    {
+      "slide": 3,
+      "viewport": [
+        1024,
+        768
+      ],
+      "horizontal": true,
+      "frame_height": 768
+    },
+    {
+      "slide": 4,
+      "viewport": [
+        1024,
+        768
+      ],
+      "horizontal": true,
+      "frame_height": 768
+    },
+    {
+      "slide": 5,
+      "viewport": [
+        1024,
+        768
+      ],
+      "horizontal": true,
+      "frame_height": 768
+    },
+    {
+      "slide": 6,
+      "viewport": [
+        1024,
+        768
+      ],
+      "horizontal": true,
+      "frame_height": 768
+    },
+    {
+      "slide": 7,
+      "viewport": [
+        1024,
+        768
+      ],
+      "horizontal": true,
+      "frame_height": 768
+    },
+    {
+      "slide": 8,
+      "viewport": [
+        1024,
+        768
+      ],
+      "horizontal": true,
+      "frame_height": 768
+    },
+    {
+      "slide": 9,
+      "viewport": [
+        1024,
+        768
+      ],
+      "horizontal": true,
+      "frame_height": 768
+    },
+    {
+      "slide": 10,
+      "viewport": [
+        1024,
+        768
+      ],
+      "horizontal": true,
+      "frame_height": 768
+    },
+    {
+      "slide": 11,
+      "viewport": [
+        1024,
+        768
+      ],
+      "horizontal": true,
+      "frame_height": 768
+    },
+    {
+      "slide": 12,
+      "viewport": [
+        1024,
+        768
+      ],
+      "horizontal": true,
+      "frame_height": 768
+    },
+    {
+      "slide": 13,
+      "viewport": [
+        1024,
+        768
+      ],
+      "horizontal": true,
+      "frame_height": 768
+    },
+    {
+      "slide": 14,
+      "viewport": [
+        1024,
+        768
+      ],
+      "horizontal": true,
+      "frame_height": 768
+    },
+    {
+      "slide": 15,
+      "viewport": [
+        1024,
+        768
+      ],
+      "horizontal": true,
+      "frame_height": 768
+    },
+    {
+      "slide": 16,
+      "viewport": [
+        1024,
+        768
+      ],
+      "horizontal": true,
+      "frame_height": 768
+    },
+    {
+      "slide": 17,
+      "viewport": [
+        1024,
+        768
+      ],
+      "horizontal": true,
+      "frame_height": 768
+    },
+    {
+      "slide": 18,
+      "viewport": [
+        1024,
+        768
+      ],
+      "horizontal": true,
+      "frame_height": 768
+    },
+    {
+      "slide": 19,
+      "viewport": [
+        1024,
+        768
+      ],
+      "horizontal": true,
+      "frame_height": 768
+    },
+    {
+      "slide": 20,
+      "viewport": [
+        1024,
+        768
+      ],
+      "horizontal": true,
+      "frame_height": 768
+    },
+    {
+      "slide": 21,
+      "viewport": [
+        1024,
+        768
+      ],
+      "horizontal": true,
+      "frame_height": 768
+    },
+    {
+      "slide": 22,
+      "viewport": [
+        1024,
+        768
+      ],
+      "horizontal": true,
+      "frame_height": 768
+    },
+    {
+      "slide": 23,
+      "viewport": [
+        1024,
+        768
+      ],
+      "horizontal": true,
+      "frame_height": 768
+    },
+    {
+      "slide": 24,
+      "viewport": [
+        1024,
+        768
+      ],
+      "horizontal": true,
+      "frame_height": 768
+    },
+    {
+      "slide": 25,
+      "viewport": [
+        1024,
+        768
+      ],
+      "horizontal": true,
+      "frame_height": 768
+    },
+    {
+      "slide": 26,
+      "viewport": [
+        1024,
+        768
+      ],
+      "horizontal": true,
+      "frame_height": 768
+    },
+    {
+      "slide": 1,
+      "viewport": [
+        1920,
+        1080
+      ],
+      "horizontal": true,
+      "frame_height": 1080
+    },
+    {
+      "slide": 2,
+      "viewport": [
+        1920,
+        1080
+      ],
+      "horizontal": true,
+      "frame_height": 1080
+    },
+    {
+      "slide": 3,
+      "viewport": [
+        1920,
+        1080
+      ],
+      "horizontal": true,
+      "frame_height": 1080
+    },
+    {
+      "slide": 4,
+      "viewport": [
+        1920,
+        1080
+      ],
+      "horizontal": true,
+      "frame_height": 1080
+    },
+    {
+      "slide": 5,
+      "viewport": [
+        1920,
+        1080
+      ],
+      "horizontal": true,
+      "frame_height": 1080
+    },
+    {
+      "slide": 6,
+      "viewport": [
+        1920,
+        1080
+      ],
+      "horizontal": true,
+      "frame_height": 1080
+    },
+    {
+      "slide": 7,
+      "viewport": [
+        1920,
+        1080
+      ],
+      "horizontal": true,
+      "frame_height": 1080
+    },
+    {
+      "slide": 8,
+      "viewport": [
+        1920,
+        1080
+      ],
+      "horizontal": true,
+      "frame_height": 1080
+    },
+    {
+      "slide": 9,
+      "viewport": [
+        1920,
+        1080
+      ],
+      "horizontal": true,
+      "frame_height": 1080
+    },
+    {
+      "slide": 10,
+      "viewport": [
+        1920,
+        1080
+      ],
+      "horizontal": true,
+      "frame_height": 1080
+    },
+    {
+      "slide": 11,
+      "viewport": [
+        1920,
+        1080
+      ],
+      "horizontal": true,
+      "frame_height": 1080
+    },
+    {
+      "slide": 12,
+      "viewport": [
+        1920,
+        1080
+      ],
+      "horizontal": true,
+      "frame_height": 1080
+    },
+    {
+      "slide": 13,
+      "viewport": [
+        1920,
+        1080
+      ],
+      "horizontal": true,
+      "frame_height": 1080
+    },
+    {
+      "slide": 14,
+      "viewport": [
+        1920,
+        1080
+      ],
+      "horizontal": true,
+      "frame_height": 1080
+    },
+    {
+      "slide": 15,
+      "viewport": [
+        1920,
+        1080
+      ],
+      "horizontal": true,
+      "frame_height": 1080
+    },
+    {
+      "slide": 16,
+      "viewport": [
+        1920,
+        1080
+      ],
+      "horizontal": true,
+      "frame_height": 1080
+    },
+    {
+      "slide": 17,
+      "viewport": [
+        1920,
+        1080
+      ],
+      "horizontal": true,
+      "frame_height": 1080
+    },
+    {
+      "slide": 18,
+      "viewport": [
+        1920,
+        1080
+      ],
+      "horizontal": true,
+      "frame_height": 1080
+    },
+    {
+      "slide": 19,
+      "viewport": [
+        1920,
+        1080
+      ],
+      "horizontal": true,
+      "frame_height": 1080
+    },
+    {
+      "slide": 20,
+      "viewport": [
+        1920,
+        1080
+      ],
+      "horizontal": true,
+      "frame_height": 1080
+    },
+    {
+      "slide": 21,
+      "viewport": [
+        1920,
+        1080
+      ],
+      "horizontal": true,
+      "frame_height": 1080
+    },
+    {
+      "slide": 22,
+      "viewport": [
+        1920,
+        1080
+      ],
+      "horizontal": true,
+      "frame_height": 1080
+    },
+    {
+      "slide": 23,
+      "viewport": [
+        1920,
+        1080
+      ],
+      "horizontal": true,
+      "frame_height": 1080
+    },
+    {
+      "slide": 24,
+      "viewport": [
+        1920,
+        1080
+      ],
+      "horizontal": true,
+      "frame_height": 1080
+    },
+    {
+      "slide": 25,
+      "viewport": [
+        1920,
+        1080
+      ],
+      "horizontal": true,
+      "frame_height": 1080
+    },
+    {
+      "slide": 26,
+      "viewport": [
+        1920,
+        1080
+      ],
+      "horizontal": true,
+      "frame_height": 1080
+    },
+    {
+      "slide": 1,
+      "viewport": [
+        390,
+        844
+      ],
+      "horizontal": true,
+      "frame_height": 844
+    },
+    {
+      "slide": 2,
+      "viewport": [
+        390,
+        844
+      ],
+      "horizontal": true,
+      "frame_height": 1033
+    },
+    {
+      "slide": 3,
+      "viewport": [
+        390,
+        844
+      ],
+      "horizontal": true,
+      "frame_height": 872
+    },
+    {
+      "slide": 4,
+      "viewport": [
+        390,
+        844
+      ],
+      "horizontal": true,
+      "frame_height": 1059
+    },
+    {
+      "slide": 5,
+      "viewport": [
+        390,
+        844
+      ],
+      "horizontal": true,
+      "frame_height": 986
+    },
+    {
+      "slide": 6,
+      "viewport": [
+        390,
+        844
+      ],
+      "horizontal": true,
+      "frame_height": 987
+    },
+    {
+      "slide": 7,
+      "viewport": [
+        390,
+        844
+      ],
+      "horizontal": true,
+      "frame_height": 983
+    },
+    {
+      "slide": 8,
+      "viewport": [
+        390,
+        844
+      ],
+      "horizontal": true,
+      "frame_height": 958
+    },
+    {
+      "slide": 9,
+      "viewport": [
+        390,
+        844
+      ],
+      "horizontal": true,
+      "frame_height": 936
+    },
+    {
+      "slide": 10,
+      "viewport": [
+        390,
+        844
+      ],
+      "horizontal": true,
+      "frame_height": 1062
+    },
+    {
+      "slide": 11,
+      "viewport": [
+        390,
+        844
+      ],
+      "horizontal": true,
+      "frame_height": 1009
+    },
+    {
+      "slide": 12,
+      "viewport": [
+        390,
+        844
+      ],
+      "horizontal": true,
+      "frame_height": 1035
+    },
+    {
+      "slide": 13,
+      "viewport": [
+        390,
+        844
+      ],
+      "horizontal": true,
+      "frame_height": 1136
+    },
+    {
+      "slide": 14,
+      "viewport": [
+        390,
+        844
+      ],
+      "horizontal": true,
+      "frame_height": 1034
+    },
+    {
+      "slide": 15,
+      "viewport": [
+        390,
+        844
+      ],
+      "horizontal": true,
+      "frame_height": 1035
+    },
+    {
+      "slide": 16,
+      "viewport": [
+        390,
+        844
+      ],
+      "horizontal": true,
+      "frame_height": 1053
+    },
+    {
+      "slide": 17,
+      "viewport": [
+        390,
+        844
+      ],
+      "horizontal": true,
+      "frame_height": 1023
+    },
+    {
+      "slide": 18,
+      "viewport": [
+        390,
+        844
+      ],
+      "horizontal": true,
+      "frame_height": 965
+    },
+    {
+      "slide": 19,
+      "viewport": [
+        390,
+        844
+      ],
+      "horizontal": true,
+      "frame_height": 985
+    },
+    {
+      "slide": 20,
+      "viewport": [
+        390,
+        844
+      ],
+      "horizontal": true,
+      "frame_height": 899
+    },
+    {
+      "slide": 21,
+      "viewport": [
+        390,
+        844
+      ],
+      "horizontal": true,
+      "frame_height": 978
+    },
+    {
+      "slide": 22,
+      "viewport": [
+        390,
+        844
+      ],
+      "horizontal": true,
+      "frame_height": 1061
+    },
+    {
+      "slide": 23,
+      "viewport": [
+        390,
+        844
+      ],
+      "horizontal": true,
+      "frame_height": 907
+    },
+    {
+      "slide": 24,
+      "viewport": [
+        390,
+        844
+      ],
+      "horizontal": true,
+      "frame_height": 1195
+    },
+    {
+      "slide": 25,
+      "viewport": [
+        390,
+        844
+      ],
+      "horizontal": true,
+      "frame_height": 883
+    },
+    {
+      "slide": 26,
+      "viewport": [
+        390,
+        844
+      ],
+      "horizontal": true,
+      "frame_height": 844
+    },
+    {
+      "slide": 1,
+      "viewport": [
+        844,
+        390
+      ],
+      "horizontal": true,
+      "frame_height": 538
+    },
+    {
+      "slide": 2,
+      "viewport": [
+        844,
+        390
+      ],
+      "horizontal": true,
+      "frame_height": 686
+    },
+    {
+      "slide": 3,
+      "viewport": [
+        844,
+        390
+      ],
+      "horizontal": true,
+      "frame_height": 613
+    },
+    {
+      "slide": 4,
+      "viewport": [
+        844,
+        390
+      ],
+      "horizontal": true,
+      "frame_height": 595
+    },
+    {
+      "slide": 5,
+      "viewport": [
+        844,
+        390
+      ],
+      "horizontal": true,
+      "frame_height": 668
+    },
+    {
+      "slide": 6,
+      "viewport": [
+        844,
+        390
+      ],
+      "horizontal": true,
+      "frame_height": 637
+    },
+    {
+      "slide": 7,
+      "viewport": [
+        844,
+        390
+      ],
+      "horizontal": true,
+      "frame_height": 664
+    },
+    {
+      "slide": 8,
+      "viewport": [
+        844,
+        390
+      ],
+      "horizontal": true,
+      "frame_height": 639
+    },
+    {
+      "slide": 9,
+      "viewport": [
+        844,
+        390
+      ],
+      "horizontal": true,
+      "frame_height": 637
+    },
+    {
+      "slide": 10,
+      "viewport": [
+        844,
+        390
+      ],
+      "horizontal": true,
+      "frame_height": 631
+    },
+    {
+      "slide": 11,
+      "viewport": [
+        844,
+        390
+      ],
+      "horizontal": true,
+      "frame_height": 622
+    },
+    {
+      "slide": 12,
+      "viewport": [
+        844,
+        390
+      ],
+      "horizontal": true,
+      "frame_height": 669
+    },
+    {
+      "slide": 13,
+      "viewport": [
+        844,
+        390
+      ],
+      "horizontal": true,
+      "frame_height": 769
+    },
+    {
+      "slide": 14,
+      "viewport": [
+        844,
+        390
+      ],
+      "horizontal": true,
+      "frame_height": 672
+    },
+    {
+      "slide": 15,
+      "viewport": [
+        844,
+        390
+      ],
+      "horizontal": true,
+      "frame_height": 683
+    },
+    {
+      "slide": 16,
+      "viewport": [
+        844,
+        390
+      ],
+      "horizontal": true,
+      "frame_height": 726
+    },
+    {
+      "slide": 17,
+      "viewport": [
+        844,
+        390
+      ],
+      "horizontal": true,
+      "frame_height": 640
+    },
+    {
+      "slide": 18,
+      "viewport": [
+        844,
+        390
+      ],
+      "horizontal": true,
+      "frame_height": 604
+    },
+    {
+      "slide": 19,
+      "viewport": [
+        844,
+        390
+      ],
+      "horizontal": true,
+      "frame_height": 663
+    },
+    {
+      "slide": 20,
+      "viewport": [
+        844,
+        390
+      ],
+      "horizontal": true,
+      "frame_height": 587
+    },
+    {
+      "slide": 21,
+      "viewport": [
+        844,
+        390
+      ],
+      "horizontal": true,
+      "frame_height": 647
+    },
+    {
+      "slide": 22,
+      "viewport": [
+        844,
+        390
+      ],
+      "horizontal": true,
+      "frame_height": 655
+    },
+    {
+      "slide": 23,
+      "viewport": [
+        844,
+        390
+      ],
+      "horizontal": true,
+      "frame_height": 639
+    },
+    {
+      "slide": 24,
+      "viewport": [
+        844,
+        390
+      ],
+      "horizontal": true,
+      "frame_height": 669
+    },
+    {
+      "slide": 25,
+      "viewport": [
+        844,
+        390
+      ],
+      "horizontal": true,
+      "frame_height": 591
+    },
+    {
+      "slide": 26,
+      "viewport": [
+        844,
+        390
+      ],
+      "horizontal": true,
+      "frame_height": 521
+    }
+  ],
+  "navegacao": "setas, início/fim, limites, índice, notas, Escape, espaço em botão, histórico e hash fora da faixa verificados",
+  "pdf": "apresentacao.pdf",
+  "jogo": "cenário atual executado e capturado com VPython 7.6.5; menu inicializou; sem erros JavaScript na captura; não percorre a partida inteira",
+  "python": "46 testes aprovados, nenhum ignorado; ambiente temporário Python 3.14.7 e VPython 7.6.5 compilado",
+  "limites": [
+    "Não mede FPS de hardware físico.",
+    "Verificações de geometria de layout não substituem revisão visual das capturas.",
+    "A captura do jogo confirma a cena atual, não toda a integração funcional."
+  ],
+  "revisao_visual": "26 capturas revisadas em folhas de contato; detalhe de sombreamento e visualização móvel inspecionados; páginas de câmera e matrizes do PDF inspecionadas",
+  "verificacoes_estrutura": "26 notas, IDs únicos, âncoras internas válidas, referência local existente e imagem incorporada com texto alternativo",
+  "pdf_paginas": 26,
+  "pdf_formato": "16:9; texto pesquisável e estrutura marcada pelo Chromium"
+}
