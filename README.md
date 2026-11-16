@@ -150,6 +150,7 @@ O controle é em terceira pessoa: a câmera fica atrás do jogador e gira, com u
 | `D` | girar para a direita |
 | Arrastar com o mouse | girar o personagem (a câmera acompanha) |
 | Roda do mouse | aproximar ou afastar a câmera |
+| `C` | alternar entre a câmera em terceira pessoa e a câmera aérea fixa, que mostra todo o parque de cima |
 | `E` | coletar o lixo próximo ou tentar descartá-lo |
 | `R` | reiniciar a partida, inclusive após a vitória |
 | `M` ou `Esc` | abrir ou fechar o menu sobreposto |
