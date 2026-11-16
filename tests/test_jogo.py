@@ -331,6 +331,30 @@ class RegrasJogo(unittest.TestCase):
         self.assertGreater(camera.axis.norm().dot(frente), .8)
         self.assertFalse(jogo.camera_precisa_atualizar())
 
+    def test_tecla_c_alterna_camera_aerea_fixa(self):
+        jogo = self.jogo
+        jogo.atualizar({'c'}, .016)
+        self.assertTrue(jogo.camera_aerea)
+        camera = jogo.cena.camera
+        # Vertical, centrada no parque e alta o bastante para enquadrá-lo.
+        self.assertAlmostEqual(camera.pos.x, 0)
+        self.assertAlmostEqual(camera.pos.z, 0)
+        self.assertAlmostEqual(camera.axis.norm().y, -1)
+        meia = main.PROFUNDIDADE_PARQUE / 2
+        self.assertGreater(camera.pos.y * main.tan(jogo.cena.fov / 2), meia)
+        # Fixa: andar não move a câmera; segurar C não alterna de novo.
+        posicao = camera.pos
+        for _ in range(20):
+            jogo.atualizar({'c', 'w'}, .016)
+        self.assertEqual(jogo.cena.camera.pos, posicao)
+        self.assertTrue(jogo.camera_aerea)
+        jogo.atualizar(set(), .016)
+        jogo.atualizar({'c'}, .016)
+        self.assertFalse(jogo.camera_aerea)
+        self.assertEqual(jogo.cena.up, main.vector(0, 1, 0))
+        atras = jogo.cena.camera.pos - self.jogador.pos
+        self.assertLess(atras.dot(self.jogador.direcao), 0)
+
     def test_mouse_gira_personagem_e_aproxima_camera(self):
         jogo = self.jogo
         angulo = self.jogador.angulo
