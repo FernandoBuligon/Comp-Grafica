@@ -8,7 +8,7 @@ primitivas, coordenadas, escala, cores e iluminação.
 from collections import deque
 import json
 
-from math import atan2, cos, pi, radians, sin, tau
+from math import atan2, cos, pi, radians, sin, tan, tau
 from pathlib import Path
 from textwrap import wrap
 from time import perf_counter
@@ -78,6 +78,7 @@ SENSIBILIDADE_MOUSE = .006     # radianos de giro por pixel arrastado
 DISTANCIA_CAMERA_MINIMA = 5.0  # limites do zoom pela roda do mouse
 DISTANCIA_CAMERA_MAXIMA = 14.0
 PASSO_ZOOM = 1.0
+MARGEM_CAMERA_AEREA = 2.0      # folga ao redor do parque na vista de cima
 LARGURA_PARQUE = 34.0
 PROFUNDIDADE_PARQUE = 26.0
 LARGURA_CENA_PADRAO = 960
@@ -557,6 +558,8 @@ class JogoReciclagem:
         self.giro_mouse = 0.0
         self.distancia_camera = DISTANCIA_CAMERA
         self.distancia_camera_aplicada = None
+        self.camera_aerea = False
+        self.c_estava_pressionado = False
         # Widget persistente: atualizar text não acrescenta HTML à legenda.
         self.estado_menu = wtext(
             text='<span id="estado-menu" hidden>{"aberto":false,"secao":"1"}</span>')
@@ -686,6 +689,10 @@ class JogoReciclagem:
             self.atalho_menu_estava_pressionado = bool(teclas & {"m", "esc", "escape"})
             return
         self.atualizar_entrada_menu(teclas)
+        c_pressionado = "c" in teclas
+        if c_pressionado and not self.c_estava_pressionado and not self.menu_aberto:
+            self.alternar_camera_aerea()
+        self.c_estava_pressionado = c_pressionado
         if self.menu_aberto:
             self.e_estava_pressionado = "e" in teclas
             self.atualizar_interface()
@@ -761,7 +768,34 @@ class JogoReciclagem:
                 lixo.atualizar_sombra()
                 self.voos.remove(voo)
 
+    def alternar_camera_aerea(self):
+        """Alterna entre a terceira pessoa e a câmera fixa vertical (tecla C)."""
+        self.camera_aerea = not self.camera_aerea
+        self.atualizar_camera()
+
+    def posicionar_camera_aerea(self):
+        """Câmera fixa no alto, olhando para baixo e enquadrando todo o parque.
+
+        O norte do parque (-z) fica no topo da tela. A altura é calculada a
+        partir do campo de visão para que largura e profundidade caibam.
+        """
+        meia_largura = LARGURA_PARQUE / 2 + MARGEM_CAMERA_AEREA
+        meia_profundidade = PROFUNDIDADE_PARQUE / 2 + MARGEM_CAMERA_AEREA
+        largura = max(1, self.cena.width)
+        altura_tela = max(1, self.cena.height)
+        # O VPython aplica o fov à menor dimensão do canvas.
+        if largura >= altura_tela:
+            necessario = max(meia_profundidade, meia_largura * altura_tela / largura)
+        else:
+            necessario = max(meia_largura, meia_profundidade * largura / altura_tela)
+        altura = necessario / tan(self.cena.fov / 2)
+        self.cena.up = vector(0, 0, -1)
+        self.cena.camera.pos = vector(0, altura, 0)
+        self.cena.camera.axis = vector(0, -altura, 0)
+
     def camera_precisa_atualizar(self):
+        if self.camera_aerea:
+            return False
         diferenca = (self.jogador.angulo - self.angulo_camera + pi) % tau - pi
         return (abs(diferenca) > 1e-4
                 or self.distancia_camera != self.distancia_camera_aplicada)
@@ -771,7 +805,12 @@ class JogoReciclagem:
 
         A posição acompanha o jogador imediatamente; o ângulo gira com atraso
         suave, para que as curvas não fiquem bruscas. Sem delta_t, alinha já.
+        Com a câmera aérea ativa, mantém a vista fixa de cima.
         """
+        if self.camera_aerea:
+            self.posicionar_camera_aerea()
+            return
+        self.cena.up = vector(0, 1, 0)
         if delta_t is None:
             self.angulo_camera = self.jogador.angulo
         else:
